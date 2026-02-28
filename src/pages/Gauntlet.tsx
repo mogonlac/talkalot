@@ -11,8 +11,8 @@ export default function Gauntlet() {
   const launchRandom = () => {
     setLaunching(true)
     setTimeout(() => {
-      const random = SEED_SCENARIOS[Math.floor(Math.random() * SEED_SCENARIOS.length)]
-      navigate(`/scenario/${random.id}`)
+      const randomIndex = Math.floor(Math.random() * SEED_SCENARIOS.length)
+      navigate(`/feed?start=${randomIndex}`)
     }, 800)
   }
 

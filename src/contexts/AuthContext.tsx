@@ -22,8 +22,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-    if (data) setProfile(data)
+    // Retry a few times in case profile insert hasn't completed yet
+    for (let i = 0; i < 3; i++) {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      if (data) {
+        setProfile(data)
+        return
+      }
+      console.log('Profile fetch attempt', i + 1, error)
+      await new Promise(r => setTimeout(r, 1000))
+    }
+    // If still no profile, upsert a default one
+    const { data: newProfile, error: upsertError } = await supabase
+      .from('profiles')
+      .upsert({
+        id: userId,
+        username: 'user_' + userId.slice(0, 6),
+        xp: 0,
+        level: 1,
+        elo: 1000,
+        streak: 0,
+        cefr_level: 'A1'
+      }, { onConflict: 'id' })
+      .select()
+      .single()
+    console.log('Upsert result:', newProfile, upsertError)
+    if (newProfile) setProfile(newProfile)
   }
 
   const refreshProfile = async () => {

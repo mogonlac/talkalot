@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Explorer from "./pages/Explorer";
 import Gauntlet from "./pages/Gauntlet";
+import Feed from "./pages/Feed";
 import Conversation from "./pages/Conversation";
 import Results from "./pages/Results";
 import NotFound from "./pages/NotFound";
@@ -26,7 +27,8 @@ const App = () => (
             <Route path="/" element={<Auth />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/modes/explorer" element={<Explorer />} />
+            <Route path="/modes/explorer" element={<Feed />} />
+            <Route path="/feed" element={<Feed />} />
             <Route path="/modes/gauntlet" element={<Gauntlet />} />
             <Route path="/scenario/:id" element={<Conversation />} />
             <Route path="/results" element={<Results />} />

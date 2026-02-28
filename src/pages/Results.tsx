@@ -11,7 +11,7 @@ interface Message {
   content: string
 }
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
 
 interface ScoreResult {
   grammar: number
@@ -83,20 +83,22 @@ Respond ONLY in this exact JSON format:
   "advice": "<one short advice sentence>"
 }`
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }] }],
-            generationConfig: { maxOutputTokens: 200, temperature: 0.3 }
-          })
-        }
-      )
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 200,
+          temperature: 0.3
+        })
+      })
 
       const data = await response.json()
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'
+      const text = data.choices?.[0]?.message?.content || '{}'
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : { grammar: 70, vocabulary: 70, fluency: 70, advice: 'Keep practising!' }
 
@@ -129,14 +131,25 @@ Respond ONLY in this exact JSON format:
     const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY
     if (!apiKey) return
     try {
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM/stream', {
         method: 'POST',
-        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: 'eleven_monolingual_v1', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
+        headers: {
+          'xi-api-key': apiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'audio/mpeg'
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: { stability: 0.5, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true }
+        })
       })
+      if (!response.ok) return
       const blob = await response.blob()
       new Audio(URL.createObjectURL(blob)).play()
-    } catch (e) { console.error(e) }
+    } catch (err) {
+      console.error('TTS error:', err)
+    }
   }
 
   const saveSession = async (result: ScoreResult) => {

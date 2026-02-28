@@ -1,39 +1,79 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft, Mic, MicOff, Send, MessageSquare } from 'lucide-react'
+import { Mic, MicOff, Send, X, Zap } from 'lucide-react'
 import { SEED_SCENARIOS } from '@/data/scenarios'
-import { useAuth } from '@/contexts/AuthContext'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
 }
 
+const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
+const ELEVENLABS_API_KEY = import.meta.env.VITE_ELEVENLABS_API_KEY || ''
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
 const MAX_EXCHANGES = 6
+
+const CHARACTER_GRADIENTS = [
+  'from-purple-600 to-indigo-600',
+  'from-orange-500 to-red-500',
+  'from-green-500 to-teal-500',
+  'from-pink-500 to-rose-500',
+  'from-blue-500 to-cyan-500',
+  'from-yellow-500 to-amber-500',
+]
+
+async function generateImage(prompt: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1 }
+        })
+      }
+    )
+    const data = await response.json()
+    const b64 = data.predictions?.[0]?.bytesBase64Encoded
+    if (b64) return `data:image/png;base64,${b64}`
+    return null
+  } catch (err) {
+    console.error('Image gen error:', err)
+    return null
+  }
+}
 
 export default function Conversation() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [listening, setListening] = useState(false)
+  const [transcribing, setTranscribing] = useState(false)
   const [exchangeCount, setExchangeCount] = useState(0)
-  const [sessionStarted, setSessionStarted] = useState(false)
+  const [bgImage, setBgImage] = useState<string | null>(null)
+  const [avatarImage, setAvatarImage] = useState<string | null>(null)
+  const [imagesLoading, setImagesLoading] = useState(true)
+  const [showInput, setShowInput] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const recognitionRef = useRef<any>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
 
   const scenario = SEED_SCENARIOS.find(s => s.id === id)
+  const scenarioIndex = SEED_SCENARIOS.findIndex(s => s.id === id)
+  const gradient = CHARACTER_GRADIENTS[scenarioIndex % CHARACTER_GRADIENTS.length]
 
   useEffect(() => {
     if (!scenario) return
-    // Start with the AI's opening line
     setMessages([{ role: 'assistant', content: scenario.opening_line }])
-    setSessionStarted(true)
-  }, [scenario])
+    // Generate images
+    generateImages()
+    // Speak opening line
+    setTimeout(() => speakText(scenario.opening_line), 500)
+  }, [id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -41,19 +81,30 @@ export default function Conversation() {
 
   useEffect(() => {
     if (exchangeCount >= MAX_EXCHANGES && exchangeCount > 0) {
-      // End session - go to results
       setTimeout(() => {
         navigate('/results', { state: { messages, scenario } })
-      }, 500)
+      }, 1000)
     }
   }, [exchangeCount])
+
+  const generateImages = async () => {
+    if (!scenario) return
+    setImagesLoading(true)
+    const [bg, avatar] = await Promise.all([
+      generateImage(`${scenario.context}, cinematic, dark moody atmospheric lighting, photorealistic, wide angle, no people`),
+      generateImage(`Portrait of ${scenario.character_name}, ${scenario.character_role}, ${scenario.character_personality}, dramatic lighting, dark background, photorealistic, close up face`)
+    ])
+    if (bg) setBgImage(bg)
+    if (avatar) setAvatarImage(avatar)
+    setImagesLoading(false)
+  }
 
   if (!scenario) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
         <div className="text-white text-center">
           <p className="text-xl font-bold mb-4">Scenario not found</p>
-          <Button onClick={() => navigate('/modes/explorer')} className="bg-purple-600 hover:bg-purple-700">Back to Explorer</Button>
+          <button onClick={() => navigate('/modes/explorer')} className="bg-purple-600 px-4 py-2 rounded-xl text-white font-bold">Back</button>
         </div>
       </div>
     )
@@ -62,6 +113,7 @@ export default function Conversation() {
   const sendMessage = async (userMessage: string) => {
     if (!userMessage.trim() || loading) return
     setLoading(true)
+    setShowInput(false)
 
     const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }]
     setMessages(newMessages)
@@ -71,208 +123,271 @@ export default function Conversation() {
       const systemPrompt = `You are ${scenario.character_name}, a ${scenario.character_role}. 
 Personality: ${scenario.character_personality}
 Mood: ${scenario.character_mood}
-Accent/Style: ${scenario.character_accent}
+Style: ${scenario.character_accent}
 Context: ${scenario.context}
 
-Stay completely in character. Keep responses short (1-3 sentences max). Be realistic and immersive. 
-This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}. ${exchangeCount >= MAX_EXCHANGES - 1 ? 'This is the last exchange, wrap up the conversation naturally.' : ''}`
+Stay completely in character. Keep responses short (1-3 sentences max). Be realistic and immersive.
+This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX_EXCHANGES - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
 
-      const history = newMessages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
-      }))
+      const conversationHistory = newMessages
+        .filter((m, i) => !(i === 0 && m.role === 'assistant'))
+        .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: history,
-            generationConfig: { maxOutputTokens: 150, temperature: 0.8 }
-          })
-        }
-      )
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'system', content: systemPrompt }, ...conversationHistory],
+          max_tokens: 150,
+          temperature: 0.8
+        })
+      })
 
       const data = await response.json()
-      const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "..."
-
+      const aiText = data.choices?.[0]?.message?.content || "I didn't quite catch that."
       setMessages(prev => [...prev, { role: 'assistant', content: aiText }])
       setExchangeCount(prev => prev + 1)
-
-      // ElevenLabs TTS
       speakText(aiText)
     } catch (err) {
-      console.error(err)
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I didn't catch that." }])
+      console.error('Send error:', err)
     }
     setLoading(false)
   }
 
   const speakText = async (text: string) => {
-    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY
-    if (!apiKey) return
+    if (!ELEVENLABS_API_KEY) return
     try {
-      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM/stream', {
         method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text,
-          model_id: 'eleven_monolingual_v1',
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-        })
+        headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
       })
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
-      const audio = new Audio(url)
-      audio.play()
-    } catch (err) {
-      console.error('TTS error:', err)
-    }
+      if (!response.ok) return
+      const arrayBuffer = await response.arrayBuffer()
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+      const source = audioContext.createBufferSource()
+      source.buffer = audioBuffer
+      source.connect(audioContext.destination)
+      source.start(0)
+    } catch (err) { console.error('TTS error:', err) }
   }
 
-  const startListening = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      alert('Speech recognition not supported in this browser. Please use Chrome.')
+  const toggleListening = async () => {
+    if (listening) {
+      mediaRecorderRef.current?.stop()
+      setListening(false)
       return
     }
-    const recognition = new SpeechRecognition()
-    recognition.lang = 'en-US'
-    recognition.continuous = false
-    recognition.interimResults = false
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript
-      setInput(transcript)
-      setListening(false)
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      audioChunksRef.current = []
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        await transcribeWithGroq(audioBlob)
+      }
+      mediaRecorderRef.current = mediaRecorder
+      mediaRecorder.start()
+      setListening(true)
+    } catch (err) {
+      console.error('Mic error:', err)
+      alert('Could not access microphone.')
     }
-    recognition.onerror = () => setListening(false)
-    recognition.onend = () => setListening(false)
-    recognitionRef.current = recognition
-    recognition.start()
-    setListening(true)
   }
 
-  const stopListening = () => {
-    recognitionRef.current?.stop()
-    setListening(false)
+  const transcribeWithGroq = async (audioBlob: Blob) => {
+    setTranscribing(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', audioBlob, 'audio.webm')
+      formData.append('model', 'whisper-large-v3')
+      formData.append('language', 'en')
+      const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        body: formData
+      })
+      const data = await response.json()
+      if (data.text) {
+        // Auto send after voice transcription
+        await sendMessage(data.text)
+      }
+    } catch (err) { console.error('Transcription error:', err) }
+    setTranscribing(false)
   }
 
-  const handleEnd = () => {
-    navigate('/results', { state: { messages, scenario } })
-  }
-
+  const lastMessage = messages[messages.length - 1]
   const progress = (exchangeCount / MAX_EXCHANGES) * 100
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-purple-900/30 flex-shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => navigate('/modes/explorer')} className="text-slate-400 hover:text-white p-2">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0" style={{ boxShadow: '0 0 10px rgba(124,58,237,0.5)' }}>
-              <MessageSquare className="w-4 h-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-white font-bold text-sm truncate">{scenario.character_name}</p>
-              <p className="text-slate-400 text-xs truncate">{scenario.character_role}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-slate-400">{exchangeCount}/{MAX_EXCHANGES}</div>
-          <Button variant="ghost" size="sm" onClick={handleEnd} className="text-slate-400 hover:text-red-400 text-xs">
-            End
-          </Button>
+    <div className="h-screen w-full flex flex-col overflow-hidden relative" style={{ background: '#0a0a0f' }}>
+
+      {/* Full screen background image */}
+      {bgImage ? (
+        <div
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${bgImage})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: 0.25
+          }}
+        />
+      ) : imagesLoading ? (
+        <div className="absolute inset-0 z-0 animate-pulse" style={{ background: 'linear-gradient(135deg, #1a0533, #0a1a3d)' }} />
+      ) : null}
+
+      {/* Gradient overlays */}
+      <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.98) 100%)' }} />
+
+      {/* Top bar */}
+      <div className="relative z-20 flex items-center justify-between px-5 pt-5 pb-2">
+        <button onClick={() => navigate('/modes/explorer')} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
+          <X className="w-4 h-4 text-white" />
+        </button>
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+          <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
+          <span className="text-white text-xs font-bold">{exchangeCount}/{MAX_EXCHANGES}</span>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-1 bg-slate-800 flex-shrink-0">
-        <div
-          className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+      <div className="relative z-20 mx-5 h-0.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-500 rounded-full" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Scenario context */}
-      <div className="px-4 py-2 bg-slate-900/40 border-b border-slate-800/50 flex-shrink-0">
-        <p className="text-slate-400 text-xs text-center">{scenario.context}</p>
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-purple-600 text-white rounded-br-md'
-                  : 'bg-slate-800 text-slate-100 rounded-bl-md border border-slate-700'
-              }`}
-            >
-              {msg.role === 'assistant' && (
-                <p className="text-xs text-slate-400 font-bold mb-1">{scenario.character_name}</p>
-              )}
-              {msg.content}
-            </div>
+      {/* Character portrait — center top */}
+      <div className="relative z-20 flex flex-col items-center pt-6 pb-4 flex-shrink-0">
+        {avatarImage ? (
+          <div className="relative">
+            <img
+              src={avatarImage}
+              alt={scenario.character_name}
+              className="w-28 h-28 rounded-full object-cover border-2 border-purple-500/60"
+              style={{ boxShadow: '0 0 40px rgba(124,58,237,0.5)' }}
+            />
+            {loading && (
+              <div className="absolute inset-0 rounded-full border-2 border-purple-400 animate-ping opacity-60" />
+            )}
           </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-slate-800 border border-slate-700 px-4 py-3 rounded-2xl rounded-bl-md">
-              <div className="flex gap-1 items-center h-4">
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            </div>
+        ) : (
+          <div
+            className={`w-28 h-28 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-4xl`}
+            style={{ boxShadow: '0 0 40px rgba(124,58,237,0.4)' }}
+          >
+            {imagesLoading ? <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" /> : '🎭'}
           </div>
         )}
-        <div ref={messagesEndRef} />
+        <h2 className="text-white font-black text-lg mt-3">{scenario.character_name}</h2>
+        <p className="text-slate-400 text-xs">{scenario.character_role}</p>
       </div>
 
-      {/* Input area */}
-      <div className="px-4 py-4 border-t border-purple-900/30 flex-shrink-0 bg-slate-950/50">
-        <div className="flex items-center gap-2">
+      {/* Latest AI message — big, center stage */}
+      <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-6">
+        {lastMessage?.role === 'assistant' && (
+          <div className="text-center">
+            <p className="text-white text-xl font-medium leading-relaxed" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.8)' }}>
+              "{lastMessage.content}"
+            </p>
+          </div>
+        )}
+        {lastMessage?.role === 'user' && (
+          <div className="text-center space-y-3">
+            <div className="bg-purple-600/30 border border-purple-500/40 rounded-2xl px-5 py-3 backdrop-blur-sm">
+              <p className="text-purple-200 text-sm">You said:</p>
+              <p className="text-white font-medium mt-1">"{lastMessage.content}"</p>
+            </div>
+            {loading && (
+              <div className="flex gap-1 items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Bottom controls */}
+      <div className="relative z-20 px-6 pb-10 flex-shrink-0">
+        {/* Type input — slides up when needed */}
+        {showInput && (
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && !loading && sendMessage(input)}
+              placeholder="Type your response..."
+              autoFocus
+              className="flex-1 bg-slate-900/80 border border-slate-700 text-white placeholder:text-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-500 backdrop-blur-sm"
+            />
+            <button
+              onClick={() => sendMessage(input)}
+              disabled={!input.trim() || loading}
+              className="w-11 h-11 rounded-full bg-purple-600 hover:bg-purple-700 disabled:opacity-40 flex items-center justify-center"
+            >
+              <Send className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        )}
+
+        {/* Main mic button + type toggle */}
+        <div className="flex items-center justify-center gap-6">
+          {/* Type toggle */}
           <button
-            onMouseDown={startListening}
-            onMouseUp={() => { if (listening) stopListening() }}
-            onTouchStart={startListening}
-            onTouchEnd={() => { if (listening) stopListening() }}
-            className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-              listening
-                ? 'bg-red-500 scale-110 shadow-lg shadow-red-500/50'
-                : 'bg-slate-800 hover:bg-slate-700 border border-slate-700'
-            }`}
+            onClick={() => setShowInput(!showInput)}
+            className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 backdrop-blur-sm flex items-center justify-center text-slate-400 hover:text-white transition-colors"
           >
-            {listening ? <MicOff className="w-5 h-5 text-white" /> : <Mic className="w-5 h-5 text-slate-300" />}
+            <span className="text-lg">⌨️</span>
           </button>
-          <input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-            placeholder={listening ? 'Listening...' : 'Type or hold mic to speak...'}
-            className="flex-1 bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-500 transition-colors"
-          />
+
+          {/* BIG mic button */}
           <button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || loading}
-            className="w-12 h-12 rounded-full bg-purple-600 hover:bg-purple-700 disabled:opacity-40 flex items-center justify-center flex-shrink-0 transition-all"
-            style={{ boxShadow: input.trim() ? '0 0 15px rgba(124,58,237,0.4)' : 'none' }}
+            onClick={toggleListening}
+            disabled={loading || transcribing}
+            className={`w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
+              listening
+                ? 'bg-red-500 scale-110'
+                : transcribing
+                ? 'bg-yellow-500 scale-100'
+                : 'bg-purple-600 hover:bg-purple-500 active:scale-95'
+            }`}
+            style={{
+              boxShadow: listening
+                ? '0 0 40px rgba(239,68,68,0.6)'
+                : transcribing
+                ? '0 0 40px rgba(234,179,8,0.6)'
+                : '0 0 30px rgba(124,58,237,0.5)'
+            }}
           >
-            <Send className="w-5 h-5 text-white" />
+            {transcribing ? (
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : listening ? (
+              <MicOff className="w-8 h-8 text-white" />
+            ) : (
+              <Mic className="w-8 h-8 text-white" />
+            )}
+          </button>
+
+          {/* End session */}
+          <button
+            onClick={() => navigate('/results', { state: { messages, scenario } })}
+            className="w-12 h-12 rounded-full bg-slate-800/80 border border-slate-700 backdrop-blur-sm flex items-center justify-center"
+          >
+            <Zap className="w-5 h-5 text-yellow-400" />
           </button>
         </div>
-        <p className="text-center text-xs text-slate-600 mt-2">Hold mic to speak • Type to respond</p>
+
+        <p className="text-center text-xs text-slate-600 mt-3">
+          {listening ? '🔴 Recording — tap to stop' : transcribing ? '⏳ Transcribing...' : 'Tap mic to speak'}
+        </p>
       </div>
+
+      <div ref={messagesEndRef} />
     </div>
   )
 }

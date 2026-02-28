@@ -50,12 +50,13 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1.5 bg-violet-600 w-full" />
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 pt-8 pb-4">
         <div>
           <p className="text-slate-400 text-sm font-medium">Good day,</p>
-          <h1 className="text-2xl font-black text-slate-900">{profile.username} 👋</h1>
+          <h1 className="text-2xl font-black text-slate-900"><span className="inline-block animate-bounce" style={{animationDuration: '1.5s'}}>👋</span> {profile.username}</h1>
         </div>
         <button
           onClick={handleSignOut}
@@ -67,21 +68,21 @@ export default function Dashboard() {
 
       {/* Stats row */}
       <div className="flex gap-3 px-6 mb-6">
-        <div className="flex-1 bg-orange-50 rounded-2xl px-4 py-3 flex items-center gap-2">
+        <div className="flex-1 bg-orange-50 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-sm">
           <Flame className="w-5 h-5 text-orange-500" />
           <div>
             <p className="text-xl font-black text-orange-500">{profile.streak}</p>
             <p className="text-xs text-orange-400 font-medium">Day streak</p>
           </div>
         </div>
-        <div className="flex-1 bg-violet-50 rounded-2xl px-4 py-3 flex items-center gap-2">
+        <div className="flex-1 bg-violet-50 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-sm">
           <Star className="w-5 h-5 text-violet-500" />
           <div>
             <p className="text-xl font-black text-violet-500">{profile.xp}</p>
             <p className="text-xs text-violet-400 font-medium">Total XP</p>
           </div>
         </div>
-        <div className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-2" style={{ background: `${cefrColor}18` }}>
+        <div className="flex-1 rounded-2xl px-4 py-3 flex items-center gap-2 shadow-sm" style={{ background: `${cefrColor}18` }}>
           <Trophy className="w-5 h-5" style={{ color: cefrColor }} />
           <div>
             <p className="text-xl font-black" style={{ color: cefrColor }}>{profile.cefr_level}</p>
@@ -91,22 +92,26 @@ export default function Dashboard() {
       </div>
 
       {/* XP Progress */}
-      <div className="px-6 mb-8">
+      <div className="px-6 mb-4">
         <div className="flex justify-between text-xs text-slate-400 mb-2">
           <span className="font-bold text-slate-600">Level {level}</span>
           <span>{xpInLevel} / {xpPerLevel} XP</span>
         </div>
-        <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+        <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-700"
+            className="h-full rounded-full transition-all duration-700 flex items-center justify-end pr-2"
             style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #7c3aed, #a855f7)' }}
-          />
+          >
+            {progress > 15 && <span className="text-xs font-bold text-white">{level}</span>}
+          </div>
         </div>
       </div>
 
+      <div className="h-px bg-slate-100 mx-6 mb-4" />
+
       {/* Mascot — centre piece */}
       <div className="flex flex-col items-center justify-center flex-1 px-6">
-        <div className="relative mb-6">
+        <div className="relative mb-6 shadow-sm">
           <Mascot className="w-48 h-auto" />
           {/* Speech bubble */}
           <div className="absolute -top-2 -right-4 bg-violet-600 text-white text-xs font-black px-3 py-2 rounded-2xl rounded-bl-none max-w-32 text-center leading-tight shadow-lg">
@@ -122,7 +127,7 @@ export default function Dashboard() {
           {/* Explorer Mode */}
           <button
             onClick={() => navigate('/modes/explorer')}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-violet-200 bg-violet-50 hover:bg-violet-100 active:scale-98 transition-all"
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-violet-200 bg-violet-50 hover:bg-violet-100 active:scale-95 transition-all duration-150 shadow-sm hover:shadow-md active:shadow-none"
           >
             <div className="w-12 h-12 rounded-xl bg-violet-600 flex items-center justify-center flex-shrink-0">
               <Map className="w-6 h-6 text-white" />
@@ -137,7 +142,7 @@ export default function Dashboard() {
           {/* Gauntlet Mode */}
           <button
             onClick={() => navigate('/modes/gauntlet')}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 active:scale-98 transition-all"
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-orange-200 bg-orange-50 hover:bg-orange-100 active:scale-95 transition-all duration-150 shadow-sm hover:shadow-md active:shadow-none"
           >
             <div className="w-12 h-12 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0">
               <Shuffle className="w-6 h-6 text-white" />
@@ -153,6 +158,7 @@ export default function Dashboard() {
 
       {/* Bottom padding */}
       <div className="h-10" />
+      <p className="text-center text-slate-200 text-xs pb-4">DuoConnect v1.0</p>
     </div>
   )
 }

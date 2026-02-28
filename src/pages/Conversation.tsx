@@ -239,22 +239,28 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       ) : null}
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.98) 100%)' }} />
+      <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.95) 100%)' }} />
 
       {/* Top bar */}
       <div className="relative z-20 flex items-center justify-between px-5 pt-5 pb-2">
-        <button onClick={() => navigate('/modes/explorer')} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
-          <X className="w-4 h-4 text-white" />
+        <button onClick={() => navigate('/modes/explorer')} className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:bg-white/20 transition-colors">
+          <X className="w-5 h-5 text-white" />
         </button>
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 px-4 py-1.5 rounded-full">
           <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'}`} />
           <span className="text-white text-xs font-bold">{exchangeCount}/{MAX_EXCHANGES}</span>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="relative z-20 mx-5 h-0.5 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-500 rounded-full" style={{ width: `${progress}%` }} />
+      <div className="relative z-20 mx-5 h-1 bg-white/10 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-gradient-to-r from-purple-500 to-indigo-400 transition-all duration-500 rounded-full" 
+          style={{ 
+            width: `${progress}%`,
+            boxShadow: progress > 0 ? '0 0 8px rgba(124,58,237,0.5)' : 'none'
+          }} 
+        />
       </div>
 
       {/* Character portrait — center top */}
@@ -264,7 +270,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
             <img
               src={avatarImage}
               alt={scenario.character_name}
-              className="w-28 h-28 rounded-full object-cover border-2 border-purple-500/60"
+              className={`w-28 h-28 rounded-full object-cover border-2 border-purple-500/60 ring-2 ring-white/30 ${!loading && lastMessage?.role === 'assistant' ? 'ring-4 ring-white/60 animate-pulse' : ''}`}
               style={{ boxShadow: '0 0 40px rgba(124,58,237,0.5)' }}
             />
             {loading && (
@@ -285,15 +291,15 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
 
       {/* Mission banner */}
       <div className="relative z-20 mx-5 mb-2 flex-shrink-0">
-        <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 backdrop-blur-sm">
-          <p className="text-purple-300 text-xs leading-relaxed">{scenario.context}</p>
+        <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 backdrop-blur-sm">
+          <p className="text-purple-300 text-[11px] leading-relaxed">{scenario.context}</p>
         </div>
       </div>
 
       {/* Latest AI message — big, center stage */}
       <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-6">
         {lastMessage?.role === 'assistant' && !loading && (
-          <div className="text-center">
+          <div key={lastMessage.content} className="animate-in fade-in duration-500 text-center">
             <p className="text-white text-xl font-medium leading-relaxed" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.8)' }}>
               "{lastMessage.content}"
             </p>
@@ -311,7 +317,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       {/* User subtitle — hovers above input, fades in/out */}
       <div className={`relative z-20 px-6 mb-3 flex-shrink-0 transition-all duration-300 ${userSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
         <div className="flex justify-end">
-          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-br-md px-4 py-2.5">
+          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/30 rounded-2xl rounded-br-md px-4 py-2.5 shadow-lg">
             <p className="text-white/50 text-xs font-semibold mb-0.5 uppercase tracking-wide">You</p>
             <p className="text-white font-medium text-sm leading-snug">{userSubtitle}</p>
           </div>
@@ -355,12 +361,12 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
           <button
             onClick={toggleListening}
             disabled={loading || transcribing}
-            className={`w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
+            className={`w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 transition-all duration-200 transition-transform duration-150 ${
               listening
                 ? 'bg-red-500 scale-110'
                 : transcribing
                 ? 'bg-yellow-500 scale-100'
-                : 'bg-purple-600 hover:bg-purple-500 active:scale-95'
+                : 'bg-purple-600 hover:bg-purple-500 hover:scale-105 active:scale-95'
             }`}
             style={{
               boxShadow: listening
@@ -388,7 +394,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
           </button>
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-3">
+        <p className="text-center text-xs text-slate-600 mt-3 tracking-wide">
           {listening ? '🔴 Recording — tap to stop' : transcribing ? '⏳ Transcribing...' : 'Tap mic to speak'}
         </p>
       </div>

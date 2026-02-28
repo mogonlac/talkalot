@@ -30,7 +30,7 @@ function ScoreBar({ label, value, color }: { label: string; value: number; color
         <span className="text-slate-600">{label}</span>
         <span className="text-slate-900 font-bold">{value}/100</span>
       </div>
-      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+      <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${color}`}
           style={{ width: `${value}%` }}
@@ -209,8 +209,8 @@ Respond ONLY in this exact JSON format:
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
-        <Mascot className="w-24 h-auto animate-bounce" />
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+        <Mascot className="w-24 h-auto animate-bounce" style={{animationDuration: '1s'}} />
         <p className="text-violet-600 font-bold text-lg animate-pulse">AI is assessing your performance...</p>
       </div>
     )
@@ -233,25 +233,27 @@ Respond ONLY in this exact JSON format:
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="h-1.5 bg-violet-600 w-full" />
       <div className="flex-1 px-6 py-8 max-w-md mx-auto w-full flex flex-col gap-6">
         {/* Score Hero */}
         <div className="text-center">
-          <div className="text-6xl mb-2">{getOverallEmoji(scores.overall)}</div>
-          <h1 className="text-4xl font-black text-slate-900 mb-1">{scores.overall}<span className="text-slate-400 text-2xl">/100</span></h1>
-          <p className="text-violet-600 font-bold text-lg">{getOverallLabel(scores.overall)}</p>
+          <div className="flex justify-center gap-2 text-2xl mb-2">⭐✨🌟</div>
+          <h1 className="text-7xl font-black text-slate-900 mb-1">{scores.overall}</h1>
+          <p className="text-slate-400 text-2xl">/100</p>
+          <p className="text-violet-600 font-bold text-lg mt-2">{getOverallLabel(scores.overall)}</p>
         </div>
 
         {/* XP Badge */}
         <div className={`flex items-center justify-center gap-2 transition-all duration-700 ${xpAnimated ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
-          <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-5 py-2 rounded-full">
+          <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-5 py-2 rounded-full animate-bounce shadow-lg" style={{animationDuration: '2s'}}>
             <Zap className="w-5 h-5 text-yellow-500" />
             <span className="text-yellow-600 font-black text-xl">+{scores.xp} XP</span>
           </div>
         </div>
 
         {/* Score Breakdown */}
-        <Card className="border-slate-200 bg-slate-50">
+        <Card className="border-slate-200 bg-white shadow-sm">
           <CardContent className="p-5 space-y-4">
             <h2 className="text-slate-900 font-bold flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-violet-600" />
@@ -264,7 +266,7 @@ Respond ONLY in this exact JSON format:
         </Card>
 
         {/* AI Advice */}
-        <Card className="border-violet-200 bg-violet-50">
+        <Card className="border-l-4 border-l-violet-500 border-violet-200 bg-violet-50">
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
@@ -286,7 +288,7 @@ Respond ONLY in this exact JSON format:
               Scenarios Completed
             </h3>
             {sessions.map((s: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">
+              <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200 shadow-sm">
                 <span className="text-slate-600 text-xs font-bold w-4">{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="text-slate-900 text-xs font-bold truncate">{s.scenario.title}</p>
@@ -303,7 +305,7 @@ Respond ONLY in this exact JSON format:
           {isGauntlet ? (
             <Button
               onClick={() => navigate('/modes/gauntlet')}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 text-base rounded-2xl"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 text-base rounded-2xl shadow-sm transition-all duration-150 active:scale-95"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               New Gauntlet
@@ -311,7 +313,7 @@ Respond ONLY in this exact JSON format:
           ) : (
             <Button
               onClick={() => navigate(`/scenario/${scenario?.id}`)}
-              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold h-12 text-base rounded-2xl"
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold h-12 text-base rounded-2xl shadow-sm transition-all duration-150 active:scale-95"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Try Again
@@ -320,14 +322,14 @@ Respond ONLY in this exact JSON format:
           <Button
             onClick={() => navigate('/modes/explorer')}
             variant="outline"
-            className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 h-12 text-base rounded-2xl"
+            className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 h-12 text-base rounded-2xl shadow-sm transition-all duration-150 active:scale-95"
           >
             {isGauntlet ? 'Explorer Mode' : 'New Scenario'}
           </Button>
           <Button
             onClick={() => navigate('/dashboard')}
             variant="ghost"
-            className="w-full text-slate-600 hover:text-slate-800 h-10 rounded-2xl"
+            className="w-full text-slate-600 hover:text-slate-800 h-10 rounded-2xl shadow-sm transition-all duration-150 active:scale-95"
           >
             <Home className="w-4 h-4 mr-2" />
             Dashboard

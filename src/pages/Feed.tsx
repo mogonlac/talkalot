@@ -111,7 +111,7 @@ export default function Feed() {
       onWheel={handleWheel}
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-5 pt-6 pb-3 flex-shrink-0">
+      <div className="flex items-center justify-between px-5 pt-6 pb-3 flex-shrink-0 shadow-sm border-b border-slate-100">
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/dashboard')} className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors">
             <ArrowLeft className="w-4 h-4 text-slate-600" />
@@ -134,22 +134,28 @@ export default function Feed() {
       </div>
 
       {/* XP bar */}
-      <div className="mx-5 h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
-        <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+      <div className="mx-5 h-2 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
+        <div 
+          className="h-full bg-violet-500 rounded-full transition-all duration-500" 
+          style={{ 
+            width: `${progress}%`,
+            boxShadow: progress > 50 ? '0 0 12px rgba(124,58,237,0.6)' : 'none'
+          }} 
+        />
       </div>
 
       {/* Main card */}
       <div
-        className={`flex-1 flex flex-col justify-end px-5 pb-6 transition-all duration-250 ${
+        className={`flex-1 flex flex-col justify-end px-5 pb-6 transition-all duration-250 shadow-xl rounded-3xl mx-5 ${
           isAnimating
             ? direction === 'up' ? '-translate-y-8 opacity-0' : 'translate-y-8 opacity-0'
             : 'translate-y-0 opacity-100'
         }`}
       >
         {/* Big character card */}
-        <div className={`${cardColor.light} ${cardColor.border} border-2 rounded-2xl p-5 mb-4 flex items-center gap-4`}>
+        <div className={`${cardColor.light} ${cardColor.border} border-2 rounded-2xl p-5 mb-4 flex items-center gap-4 shadow-md hover:shadow-lg transition-all duration-200`}>
           {/* Avatar */}
-          <div className={`w-20 h-20 rounded-2xl ${cardColor.bg} flex items-center justify-center flex-shrink-0 overflow-hidden`}>
+          <div className={`w-20 h-20 rounded-2xl ${cardColor.bg} flex items-center justify-center flex-shrink-0 overflow-hidden ring-2 ring-white shadow-md`}>
             {avatarImages[currentIndex] ? (
               <img src={avatarImages[currentIndex]} alt={scenario.character_name} className="w-full h-full object-cover" />
             ) : (
@@ -167,7 +173,7 @@ export default function Feed() {
         <div className="mb-4">
           <h3 className="text-xl font-black text-slate-900 mb-2">{scenario.title}</h3>
           <div className="flex gap-2 mb-3">
-            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold ${diff.bg} ${diff.text} ${diff.border}`}>
+            <span className={`text-xs px-2.5 py-1 rounded-full border font-bold shadow-sm ${diff.bg} ${diff.text} ${diff.border}`}>
               {scenario.difficulty}
             </span>
             <span className="text-xs px-2.5 py-1 rounded-full border border-slate-200 bg-slate-50 text-slate-500 font-medium">
@@ -175,7 +181,7 @@ export default function Feed() {
             </span>
           </div>
           {/* Mission */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3">
+          <div className="bg-violet-50 border border-violet-100 rounded-2xl p-3 shadow-sm">
             <p className="text-slate-600 text-xs leading-relaxed">{scenario.context}</p>
           </div>
         </div>
@@ -183,7 +189,7 @@ export default function Feed() {
         {/* Start button */}
         <button
           onClick={() => navigate(`/scenario/${scenario.id}`)}
-          className="w-full h-14 rounded-2xl font-black text-white text-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-violet-600 hover:bg-violet-700"
+          className="w-full h-14 rounded-2xl font-black text-white text-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-violet-600 hover:bg-violet-700 shadow-lg"
         >
           <Zap className="w-5 h-5" />
           Start Conversation
@@ -192,7 +198,7 @@ export default function Feed() {
 
       {/* Right side nav dots */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2">
-        <button onClick={goToPrev} disabled={currentIndex === 0} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${currentIndex === 0 ? 'opacity-20' : 'bg-slate-100 hover:bg-slate-200'}`}>
+        <button onClick={goToPrev} disabled={currentIndex === 0} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm ${currentIndex === 0 ? 'opacity-20' : 'bg-slate-100 hover:bg-slate-200'}`}>
           <ChevronUp className="w-4 h-4 text-slate-600" />
         </button>
         <div className="flex flex-col gap-1.5">
@@ -200,7 +206,8 @@ export default function Feed() {
             <button key={i} onClick={() => setCurrentIndex(i)} className={`rounded-full transition-all duration-300 ${i === currentIndex ? 'w-2 h-5 bg-violet-500' : 'w-2 h-2 bg-slate-200'}`} />
           ))}
         </div>
-        <button onClick={goToNext} disabled={currentIndex === SEED_SCENARIOS.length - 1} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${currentIndex === SEED_SCENARIOS.length - 1 ? 'opacity-20' : 'bg-slate-100 hover:bg-slate-200'}`}>
+        <p className="text-slate-400 text-xs font-medium mt-1">{currentIndex + 1} of {SEED_SCENARIOS.length}</p>
+        <button onClick={goToNext} disabled={currentIndex === SEED_SCENARIOS.length - 1} className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shadow-sm ${currentIndex === SEED_SCENARIOS.length - 1 ? 'opacity-20' : 'bg-slate-100 hover:bg-slate-200'}`}>
           <ChevronDown className="w-4 h-4 text-slate-600" />
         </button>
       </div>
@@ -208,6 +215,11 @@ export default function Feed() {
       {/* Swipe hint */}
       <div className="absolute bottom-3 left-0 right-0 text-center">
         <p className="text-slate-300 text-xs">Swipe up for next</p>
+      </div>
+
+      {/* Page indicator */}
+      <div className="absolute bottom-8 left-0 right-0 text-center">
+        <p className="text-slate-300 text-xs">{scenario.title}</p>
       </div>
     </div>
   )

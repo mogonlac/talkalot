@@ -249,7 +249,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
 
       {/* Top bar */}
       <div className="relative z-20 flex items-center justify-between px-5 pt-5 pb-2">
-        <button onClick={() => navigate('/dashboard')} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
+        <button onClick={() => navigate('/dashboard')} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:bg-white/20 transition-colors">
           <X className="w-4 h-4 text-white" />
         </button>
         <div className="flex items-center gap-3">
@@ -261,21 +261,24 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
           </div>
           <span className="text-white/60 text-xs font-bold">{currentScenarioIndex + 1}/{total}</span>
         </div>
-        <button onClick={() => advanceToNextScenario(messages)} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10">
-          <Zap className="w-4 h-4 text-yellow-400" />
-        </button>
+        <div className="flex flex-col items-center">
+          <button onClick={() => advanceToNextScenario(messages)} className="w-9 h-9 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 hover:bg-white/20 transition-colors">
+            <Zap className="w-4 h-4 text-yellow-400" />
+          </button>
+          <p className="text-[10px] text-slate-400 text-center mt-1">Skip</p>
+        </div>
       </div>
 
       {/* Scenario progress bar */}
       <div className="relative z-20 mx-5 h-0.5 bg-white/10 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-orange-500 to-red-400 transition-all duration-500 rounded-full" style={{ width: `${scenarioProgress}%` }} />
+        <div className="h-full bg-gradient-to-r from-orange-400 to-red-400 transition-all duration-500 rounded-full" style={{ width: `${scenarioProgress}%` }} />
       </div>
 
       {/* Character portrait */}
       <div className="relative z-20 flex flex-col items-center pt-6 pb-4 flex-shrink-0">
         {avatarImage ? (
           <div className="relative">
-            <img src={avatarImage} alt={currentScenario.character_name} className="w-28 h-28 rounded-full object-cover border-2 border-orange-500/60" style={{ boxShadow: '0 0 40px rgba(245,158,11,0.4)' }} />
+            <img src={avatarImage} alt={currentScenario.character_name} className="w-28 h-28 rounded-full object-cover border-2 border-orange-500/60 ring-2 ring-orange-300/40" style={{ boxShadow: '0 0 40px rgba(245,158,11,0.4)' }} />
             {loading && <div className="absolute inset-0 rounded-full border-2 border-orange-400 animate-ping opacity-60" />}
           </div>
         ) : (
@@ -314,7 +317,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       {/* User subtitle */}
       <div className={`relative z-20 px-6 mb-3 flex-shrink-0 transition-all duration-300 ${userSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
         <div className="flex justify-end">
-          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-br-md px-4 py-2.5">
+          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/30 rounded-2xl rounded-br-md px-4 py-2.5 shadow-lg">
             <p className="text-white/50 text-xs font-semibold mb-0.5 uppercase tracking-wide">You</p>
             <p className="text-white font-medium text-sm leading-snug">{userSubtitle}</p>
           </div>
@@ -322,7 +325,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       </div>
 
       {/* Bottom controls */}
-      <div className="relative z-20 px-6 pb-10 flex-shrink-0">
+      <div className="relative z-20 px-6 pb-10 flex-shrink-0 bg-black/20 backdrop-blur-sm rounded-t-3xl">
         {showInput && (
           <div className="flex items-center gap-2 mb-4">
             <input
@@ -347,7 +350,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
           <button
             onClick={toggleListening}
             disabled={loading || transcribing}
-            className={`w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
+            className={`w-20 h-20 rounded-full flex flex-col items-center justify-center gap-1 transition-all duration-200 hover:scale-105 transition-transform duration-150 ${
               listening ? 'bg-red-500 scale-110' : transcribing ? 'bg-yellow-500' : 'bg-orange-500 hover:bg-orange-400 active:scale-95'
             }`}
             style={{ boxShadow: listening ? '0 0 40px rgba(239,68,68,0.6)' : transcribing ? '0 0 40px rgba(234,179,8,0.6)' : '0 0 30px rgba(245,158,11,0.5)' }}

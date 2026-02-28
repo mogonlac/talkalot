@@ -1,98 +1,209 @@
-import { useState, useCallback } from "react";
+/**
+ * useLanguageTutor.ts
+ * The single source of truth for all business logic.
+ * UI components consume this hook and stay completely dumb.
+ */
+
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useConversation } from "@elevenlabs/react";
-import { scenarios, getScenarioForElo, Scenario } from "../services/scenarioData";
-import { calculateNewElo } from "../services/eloCalculator";
+import {
+  generateScenario,
+  judgeConversation,
+  GeneratedScenario,
+  ConversationMessage,
+  JudgmentResult,
+} from "../services/geminiService";
+import { applyEloChange, formatEloChange, eloToLabel, STARTING_ELO } from "../services/eloCalculator";
 
-const STARTING_ELO = 1000;
+const ELEVENLABS_AGENT_ID = import.meta.env.VITE_ELEVENLABS_AGENT_ID as string;
 
-export interface LanguageTutorState {
+export type AppPhase =
+  | "loading"        // Generating next scenario via Gemini
+  | "ready"          // Scenario ready, waiting for user to start
+  | "talking"        // Active ElevenLabs conversation
+  | "judging"        // Gemini is judging the conversation
+  | "result_pass"    // Showing pass result
+  | "result_fail"    // Showing fail result
+  | "error";         // Something went wrong
+
+export interface TutorState {
+  phase: AppPhase;
   currentElo: number;
-  currentScenario: Scenario;
-  conversationStatus: string;
+  eloLabel: string;
+  scenario: GeneratedScenario | null;
+  lastResult: JudgmentResult | null;
+  lastEloChange: string;
+  errorMessage: string;
   isSpeaking: boolean;
+  // Actions
   startConversation: () => Promise<void>;
-  endConversation: () => Promise<void>;
-  handleSuccess: () => void;
-  handleFailure: () => void;
-  handleSwipeNext: () => void;
+  stopConversation: () => Promise<void>;
+  swipeNext: () => void;
 }
 
-export function useLanguageTutor(): LanguageTutorState {
+export function useLanguageTutor(): TutorState {
+  const [phase, setPhase] = useState<AppPhase>("loading");
   const [currentElo, setCurrentElo] = useState<number>(STARTING_ELO);
-  const [currentScenario, setCurrentScenario] = useState<Scenario>(
-    getScenarioForElo(STARTING_ELO)
-  );
+  const [scenario, setScenario] = useState<GeneratedScenario | null>(null);
+  const [lastResult, setLastResult] = useState<JudgmentResult | null>(null);
+  const [lastEloChange, setLastEloChange] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [targetLanguage] = useState<string>("French");
 
+  // Accumulate transcript messages during conversation
+  const transcriptRef = useRef<ConversationMessage[]>([]);
+
+  // ------------------------------------------------------------------
+  // ElevenLabs conversation hook
+  // ------------------------------------------------------------------
   const conversation = useConversation({
-    onConnect: () => console.log("[ElevenLabs] Connected"),
-    onDisconnect: () => console.log("[ElevenLabs] Disconnected"),
-    onMessage: (message) => console.log("[ElevenLabs] Message:", message),
-    onError: (error) => console.error("[ElevenLabs] Error:", error),
+    onConnect: () => {
+      console.log("[ElevenLabs] Connected");
+      setPhase("talking");
+    },
+    onDisconnect: () => {
+      console.log("[ElevenLabs] Disconnected — judging conversation");
+      handleJudge();
+    },
+    onMessage: (message: { message: string; source: string }) => {
+      const role = message.source === "user" ? "user" : "agent";
+      transcriptRef.current.push({ role, text: message.message });
+
+      // Check if agent signalled pass/fail mid-conversation
+      if (
+        message.source === "ai" &&
+        (message.message.includes("SCENARIO_COMPLETE_PASS") ||
+          message.message.includes("SCENARIO_COMPLETE_FAIL"))
+      ) {
+        conversation.endSession().catch(console.error);
+      }
+    },
+    onError: (error: string) => {
+      console.error("[ElevenLabs] Error:", error);
+      setErrorMessage(error);
+      setPhase("error");
+    },
   });
 
-  /**
-   * Starts a WebRTC conversation session with the current scenario's agent.
-   * Requests microphone permission before connecting.
-   */
+  // ------------------------------------------------------------------
+  // Generate a new scenario from Gemini
+  // ------------------------------------------------------------------
+  const loadNextScenario = useCallback(async (elo: number) => {
+    setPhase("loading");
+    setLastResult(null);
+    setLastEloChange("");
+    transcriptRef.current = [];
+
+    try {
+      const next = await generateScenario(elo, targetLanguage);
+      setScenario(next);
+      setPhase("ready");
+    } catch (err) {
+      console.error("[Gemini] Failed to generate scenario:", err);
+      setErrorMessage("Failed to generate scenario. Check your Gemini API key.");
+      setPhase("error");
+    }
+  }, [targetLanguage]);
+
+  // Load the first scenario on mount
+  useEffect(() => {
+    loadNextScenario(STARTING_ELO);
+  }, [loadNextScenario]);
+
+  // ------------------------------------------------------------------
+  // Start ElevenLabs conversation
+  // ------------------------------------------------------------------
   const startConversation = useCallback(async () => {
+    if (!scenario) return;
+    transcriptRef.current = [];
+
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: currentScenario.elevenLabsAgentId,
+        agentId: ELEVENLABS_AGENT_ID,
+        overrides: {
+          agent: {
+            prompt: {
+              prompt: scenario.agentSystemPrompt,
+            },
+            firstMessage: `[Scene: ${scenario.setting}] ${scenario.character} is ready. Begin.`,
+          },
+        },
       });
-    } catch (error) {
-      console.error("[useLanguageTutor] Failed to start conversation:", error);
+    } catch (err) {
+      console.error("[ElevenLabs] Failed to start:", err);
+      setErrorMessage("Could not start conversation. Check microphone permissions and ElevenLabs agent ID.");
+      setPhase("error");
     }
-  }, [conversation, currentScenario.elevenLabsAgentId]);
+  }, [scenario, conversation]);
 
-  /**
-   * Ends the current WebRTC session.
-   */
-  const endConversation = useCallback(async () => {
+  // ------------------------------------------------------------------
+  // Stop ElevenLabs conversation manually
+  // ------------------------------------------------------------------
+  const stopConversation = useCallback(async () => {
     try {
       await conversation.endSession();
-    } catch (error) {
-      console.error("[useLanguageTutor] Failed to end conversation:", error);
+    } catch (err) {
+      console.error("[ElevenLabs] Failed to end session:", err);
+      handleJudge();
     }
   }, [conversation]);
 
-  /**
-   * Marks the conversation as a success, updates ELO, then advances scenario.
-   */
-  const handleSuccess = useCallback(() => {
-    const newElo = calculateNewElo(currentElo, currentScenario.difficultyTier, true);
-    setCurrentElo(newElo);
-    setCurrentScenario(getScenarioForElo(newElo));
-  }, [currentElo, currentScenario.difficultyTier]);
+  // ------------------------------------------------------------------
+  // Judge the conversation via Gemini
+  // ------------------------------------------------------------------
+  const handleJudge = useCallback(async () => {
+    if (!scenario) return;
+    setPhase("judging");
 
-  /**
-   * Marks the conversation as a failure, updates ELO, then advances scenario.
-   */
-  const handleFailure = useCallback(() => {
-    const newElo = calculateNewElo(currentElo, currentScenario.difficultyTier, false);
-    setCurrentElo(newElo);
-    setCurrentScenario(getScenarioForElo(newElo));
-  }, [currentElo, currentScenario.difficultyTier]);
+    try {
+      const result = await judgeConversation(scenario, transcriptRef.current, currentElo);
+      const newElo = applyEloChange(currentElo, result.eloChange);
+      const changeLabel = formatEloChange(result.eloChange);
 
-  /**
-   * Advances to the next scenario based on current ELO without changing the score.
-   * Cycles through the scenarios array for variety.
-   */
-  const handleSwipeNext = useCallback(() => {
-    const currentIndex = scenarios.findIndex((s) => s.id === currentScenario.id);
-    const nextIndex = (currentIndex + 1) % scenarios.length;
-    setCurrentScenario(scenarios[nextIndex]);
-  }, [currentScenario.id]);
+      setLastResult(result);
+      setLastEloChange(changeLabel);
+      setCurrentElo(newElo);
+      setPhase(result.passed ? "result_pass" : "result_fail");
+    } catch (err) {
+      console.error("[Gemini] Failed to judge:", err);
+      // Fallback: check transcript for PASS/FAIL keywords
+      const fullText = transcriptRef.current.map((m) => m.text).join(" ");
+      const passed = fullText.includes("SCENARIO_COMPLETE_PASS");
+      const eloChange = passed ? 15 : -10;
+      const newElo = applyEloChange(currentElo, eloChange);
+
+      setLastResult({
+        passed,
+        score: passed ? 60 : 20,
+        feedback: passed ? "Well done! 🎉" : "Keep practicing! 💪",
+        eloChange,
+      });
+      setLastEloChange(formatEloChange(eloChange));
+      setCurrentElo(newElo);
+      setPhase(passed ? "result_pass" : "result_fail");
+    }
+  }, [scenario, currentElo]);
+
+  // ------------------------------------------------------------------
+  // Swipe to next scenario
+  // ------------------------------------------------------------------
+  const swipeNext = useCallback(() => {
+    const eloSnapshot = currentElo;
+    loadNextScenario(eloSnapshot);
+  }, [currentElo, loadNextScenario]);
 
   return {
+    phase,
     currentElo,
-    currentScenario,
-    conversationStatus: conversation.status,
+    eloLabel: eloToLabel(currentElo),
+    scenario,
+    lastResult,
+    lastEloChange,
+    errorMessage,
     isSpeaking: conversation.isSpeaking,
     startConversation,
-    endConversation,
-    handleSuccess,
-    handleFailure,
-    handleSwipeNext,
+    stopConversation,
+    swipeNext,
   };
 }

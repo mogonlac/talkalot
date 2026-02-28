@@ -1,47 +1,52 @@
 /**
- * ELO Calculator for Language Tutor
- *
- * Uses a simplified ELO system where each scenario has an implied rating
- * based on its difficulty tier. The K-factor controls how much a single
- * result can shift the user's rating.
+ * eloCalculator.ts
+ * ELO rating system for the language tutor.
+ * Now accepts a quality score from Gemini's judgment for more nuanced ELO shifts.
  */
 
-const K_FACTOR = 32;
-const TIER_TO_ELO: Record<number, number> = {
-  1: 800,
-  2: 1000,
-  3: 1200,
-  4: 1400,
-  5: 1600,
-};
+export const STARTING_ELO = 1000;
+const ELO_FLOOR = 100;
 
 /**
- * Calculates the expected probability of the player winning against
- * an opponent with the given rating.
+ * Calculates new ELO based on Gemini's judgment result.
+ * Uses the eloChange from Gemini directly, with clamping for safety.
+ *
+ * @param currentElo  - User's current ELO
+ * @param eloChange   - Raw ELO delta from Gemini judgment (-50 to +50)
+ * @returns           - New ELO (minimum ELO_FLOOR)
  */
-function expectedScore(playerElo: number, opponentElo: number): number {
-  return 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+export function applyEloChange(currentElo: number, eloChange: number): number {
+  // Clamp the change to prevent runaway values
+  const clamped = Math.max(-50, Math.min(50, eloChange));
+  return Math.max(ELO_FLOOR, currentElo + clamped);
 }
 
 /**
- * Calculates a new ELO score after a conversation attempt.
- *
- * @param currentElo   - The user's current ELO rating
- * @param difficultyTier - The scenario's difficulty tier (1–5)
- * @param success      - true if the user succeeded, false if they failed
- * @returns            - The updated ELO rating (minimum 100)
+ * Returns an XP label string for display based on ELO change.
  */
-export function calculateNewElo(
-  currentElo: number,
-  difficultyTier: number,
-  success: boolean
-): number {
-  const scenarioElo = TIER_TO_ELO[difficultyTier] ?? 1000;
-  const expected = expectedScore(currentElo, scenarioElo);
-  const actual = success ? 1 : 0;
+export function formatEloChange(eloChange: number): string {
+  if (eloChange > 0) return `+${eloChange} XP`;
+  return `${eloChange} XP`;
+}
 
-  const newElo = Math.round(currentElo + K_FACTOR * (actual - expected));
+/**
+ * Returns a tier label (1–5) for a given ELO score.
+ */
+export function eloToTier(elo: number): 1 | 2 | 3 | 4 | 5 {
+  if (elo < 1000) return 1;
+  if (elo < 1200) return 2;
+  if (elo < 1400) return 3;
+  if (elo < 1600) return 4;
+  return 5;
+}
 
-  // Enforce a floor so ELO never goes below 100
-  return Math.max(100, newElo);
+/**
+ * Returns a human-readable level label for display.
+ */
+export function eloToLabel(elo: number): string {
+  if (elo < 1000) return "Beginner";
+  if (elo < 1200) return "Elementary";
+  if (elo < 1400) return "Intermediate";
+  if (elo < 1600) return "Advanced";
+  return "Fluent";
 }

@@ -44,7 +44,7 @@ export default function Auth() {
         {/* Logo + Mascot */}
         <div className="flex flex-col items-center mb-8">
           <Mascot className="w-32 h-auto mb-4 animate-bounce" style={{animationDuration: '2s'}} />
-          <h1 className="text-3xl font-black text-slate-900">DuoConnect</h1>
+          <h1 className="text-3xl font-black text-slate-900">Talkalot</h1>
           <p className="text-slate-400 text-sm mt-1 text-center">Master English through AI conversations</p>
         </div>
 

@@ -158,7 +158,7 @@ export default function Dashboard() {
 
       {/* Bottom padding */}
       <div className="h-10" />
-      <p className="text-center text-slate-200 text-xs pb-4">DuoConnect v1.0</p>
+      <p className="text-center text-slate-200 text-xs pb-4">Talkalot v1.0</p>
     </div>
   )
 }

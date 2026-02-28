@@ -155,34 +155,6 @@ export default function Feed() {
         <div className="h-full bg-violet-400 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Large centred avatar - floats in the middle */}
-      <div className={`absolute z-20 left-0 right-0 flex flex-col items-center transition-all duration-250 ${
-        isAnimating ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-      }`} style={{ top: '18%' }}>
-        <div className="relative">
-          {/* Glow ring behind avatar */}
-          <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${gradient} opacity-40 blur-xl scale-110`} />
-          {/* Pulse ring animation */}
-          <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${gradient} opacity-20 animate-ping`} style={{ animationDuration: '3s' }} />
-          {/* Avatar */}
-          <div className={`relative w-36 h-36 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden ring-4 ring-white/20 shadow-2xl`}>
-            {avatarImages[currentIndex] ? (
-              <img src={avatarImages[currentIndex]} alt={scenario.character_name} className="w-full h-full object-cover" />
-            ) : imgLoading[currentIndex] ? (
-              <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="text-5xl">{category?.emoji}</div>
-            )}
-          </div>
-        </div>
-        {/* Character name + role right below avatar */}
-        <div className="text-center mt-4">
-          <h2 className="text-2xl font-black text-white drop-shadow-lg">{scenario.character_name}</h2>
-          <p className="text-white/60 text-sm font-medium mt-0.5">{scenario.character_role}</p>
-          <p className="text-white/40 text-xs italic mt-1">"{scenario.character_mood}"</p>
-        </div>
-      </div>
-
       {/* Main content - bottom anchored */}
       <div
         className={`relative z-20 flex-1 flex flex-col justify-end px-5 pb-6 transition-all duration-250 ${
@@ -191,6 +163,24 @@ export default function Feed() {
             : 'translate-y-0 opacity-100'
         }`}
       >
+        {/* Character card */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 overflow-hidden ring-2 ring-white/30 shadow-xl`}>
+            {avatarImages[currentIndex] ? (
+              <img src={avatarImages[currentIndex]} alt={scenario.character_name} className="w-full h-full object-cover" />
+            ) : imgLoading[currentIndex] ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <div className="text-3xl">{category?.emoji}</div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl font-black text-white">{scenario.character_name}</h2>
+            <p className="text-white/60 text-sm">{scenario.character_role}</p>
+            <p className="text-white/40 text-xs italic mt-0.5">"{scenario.character_mood}"</p>
+          </div>
+        </div>
+
         {/* Scenario title + badges */}
         <div className="mb-3">
           <h3 className="text-xl font-black text-white mb-2">{scenario.title}</h3>

@@ -50,6 +50,7 @@ export default function GauntletPlay() {
   const [avatarImage, setAvatarImage] = useState<string | null>(null)
   const [showInput, setShowInput] = useState(false)
   const [input, setInput] = useState('')
+  const [userSubtitle, setUserSubtitle] = useState<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
 
@@ -110,6 +111,7 @@ export default function GauntletPlay() {
     setLoading(true)
     setShowInput(false)
     setInput('')
+    setUserSubtitle(userMessage)
 
     const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }]
     setMessages(newMessages)
@@ -146,6 +148,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       setMessages(finalMessages)
       const newExchangeCount = exchangeCount + 1
       setExchangeCount(newExchangeCount)
+      setUserSubtitle(null)
       await speakText(aiText)
 
       // Auto advance after last exchange
@@ -306,6 +309,16 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
             )}
           </div>
         )}
+      </div>
+
+      {/* User subtitle */}
+      <div className={`relative z-20 px-6 mb-3 flex-shrink-0 transition-all duration-300 ${userSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+        <div className="flex justify-end">
+          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-br-md px-4 py-2.5">
+            <p className="text-white/50 text-xs font-semibold mb-0.5 uppercase tracking-wide">You</p>
+            <p className="text-white font-medium text-sm leading-snug">{userSubtitle}</p>
+          </div>
+        </div>
       </div>
 
       {/* Bottom controls */}

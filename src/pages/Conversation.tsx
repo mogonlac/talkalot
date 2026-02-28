@@ -37,6 +37,8 @@ export default function Conversation() {
   const [avatarImage, setAvatarImage] = useState<string | null>(null)
   const [imagesLoading, setImagesLoading] = useState(true)
   const [showInput, setShowInput] = useState(false)
+  const [userSubtitle, setUserSubtitle] = useState<string | null>(null)
+  const subtitleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
@@ -101,10 +103,14 @@ export default function Conversation() {
     if (!userMessage.trim() || loading) return
     setLoading(true)
     setShowInput(false)
+    setInput('')
+
+    // Show user subtitle immediately
+    if (subtitleTimeoutRef.current) clearTimeout(subtitleTimeoutRef.current)
+    setUserSubtitle(userMessage)
 
     const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }]
     setMessages(newMessages)
-    setInput('')
 
     try {
       const systemPrompt = `You are ${scenario.character_name}, a ${scenario.character_role}. 
@@ -136,6 +142,8 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       const aiText = data.choices?.[0]?.message?.content || "I didn't quite catch that."
       setMessages(prev => [...prev, { role: 'assistant', content: aiText }])
       setExchangeCount(prev => prev + 1)
+      // Clear user subtitle when AI responds
+      setUserSubtitle(null)
       speakText(aiText)
     } catch (err) {
       console.error('Send error:', err)
@@ -284,28 +292,30 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
 
       {/* Latest AI message — big, center stage */}
       <div className="relative z-20 flex-1 flex flex-col items-center justify-center px-6">
-        {lastMessage?.role === 'assistant' && (
+        {lastMessage?.role === 'assistant' && !loading && (
           <div className="text-center">
             <p className="text-white text-xl font-medium leading-relaxed" style={{ textShadow: '0 2px 20px rgba(0,0,0,0.8)' }}>
               "{lastMessage.content}"
             </p>
           </div>
         )}
-        {lastMessage?.role === 'user' && (
-          <div className="text-center space-y-3">
-            <div className="bg-purple-600/30 border border-purple-500/40 rounded-2xl px-5 py-3 backdrop-blur-sm">
-              <p className="text-purple-200 text-sm">You said:</p>
-              <p className="text-white font-medium mt-1">"{lastMessage.content}"</p>
-            </div>
-            {loading && (
-              <div className="flex gap-1 items-center justify-center">
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
-              </div>
-            )}
+        {loading && (
+          <div className="flex gap-1.5 items-center justify-center">
+            <div className="w-2.5 h-2.5 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+            <div className="w-2.5 h-2.5 rounded-full bg-white/60 animate-bounce" style={{ animationDelay: '300ms' }} />
           </div>
         )}
+      </div>
+
+      {/* User subtitle — hovers above input, fades in/out */}
+      <div className={`relative z-20 px-6 mb-3 flex-shrink-0 transition-all duration-300 ${userSubtitle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+        <div className="flex justify-end">
+          <div className="max-w-[85%] bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl rounded-br-md px-4 py-2.5">
+            <p className="text-white/50 text-xs font-semibold mb-0.5 uppercase tracking-wide">You</p>
+            <p className="text-white font-medium text-sm leading-snug">{userSubtitle}</p>
+          </div>
+        </div>
       </div>
 
       {/* Bottom controls */}

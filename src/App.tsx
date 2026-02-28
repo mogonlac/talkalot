@@ -1,7 +1,5 @@
 /**
- * App.tsx
- * Primitive shell — consumes useLanguageTutor and renders ScenarioCard.
- * Lovable will replace the visual design. Do not add styling here.
+ * App.tsx — primitive shell. Lovable will replace visual design.
  */
 
 import { useLanguageTutor } from "./hooks/useLanguageTutor";
@@ -11,7 +9,7 @@ function App() {
   const tutor = useLanguageTutor();
 
   return (
-    <div style={{ fontFamily: "sans-serif" }}>
+    <div>
       <ScenarioCard
         phase={tutor.phase}
         scenario={tutor.scenario}
@@ -21,6 +19,8 @@ function App() {
         lastEloChange={tutor.lastEloChange}
         errorMessage={tutor.errorMessage}
         isSpeaking={tutor.isSpeaking}
+        targetLanguage={tutor.targetLanguage}
+        onSetLanguage={tutor.setTargetLanguage}
         onStartTalking={tutor.startConversation}
         onStopTalking={tutor.stopConversation}
         onSwipeNext={tutor.swipeNext}

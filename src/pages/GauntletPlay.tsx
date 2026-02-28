@@ -61,23 +61,27 @@ export default function GauntletPlay() {
     startScenario(currentScenario)
   }, [currentScenarioIndex])
 
-  const startScenario = async (scenario: typeof SEED_SCENARIOS[0]) => {
+  const startScenario = (scenario: typeof SEED_SCENARIOS[0]) => {
     setMessages([{ role: 'assistant', content: scenario.opening_line }])
     setExchangeCount(0)
     setBgImage(null)
     setAvatarImage(null)
-    // Speak opening line
+
+    // Speak opening line immediately — don't wait for images
     setTimeout(() => speakText(scenario.opening_line), 300)
-    // Check cache first, otherwise generate
+
+    // Load images non-blocking — fade in when ready
     const cached = getScenarioImages(scenario.id)
     if (cached) {
       if (cached.bg) setBgImage(cached.bg)
       if (cached.avatar) setAvatarImage(cached.avatar)
     } else {
-      await preloadScenarioImages(scenario.id)
-      const images = getScenarioImages(scenario.id)
-      if (images?.bg) setBgImage(images.bg)
-      if (images?.avatar) setAvatarImage(images.avatar)
+      // Generate in background, update when done
+      preloadScenarioImages(scenario.id).then(() => {
+        const images = getScenarioImages(scenario.id)
+        if (images?.bg) setBgImage(images.bg)
+        if (images?.avatar) setAvatarImage(images.avatar)
+      })
     }
   }
 

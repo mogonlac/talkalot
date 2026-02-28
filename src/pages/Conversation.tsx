@@ -66,9 +66,9 @@ export default function Conversation() {
     }
   }, [exchangeCount])
 
-  const generateImages = async () => {
+  const generateImages = () => {
     if (!scenario) return
-    // Check cache first
+    // Check cache first — instant if warm
     const cached = getScenarioImages(scenario.id)
     if (cached) {
       if (cached.bg) setBgImage(cached.bg)
@@ -76,13 +76,14 @@ export default function Conversation() {
       setImagesLoading(false)
       return
     }
-    // Not cached yet - generate and cache
+    // Not cached — generate in background, fade in when ready
     setImagesLoading(true)
-    await preloadScenarioImages(scenario.id)
-    const images = getScenarioImages(scenario.id)
-    if (images?.bg) setBgImage(images.bg)
-    if (images?.avatar) setAvatarImage(images.avatar)
-    setImagesLoading(false)
+    preloadScenarioImages(scenario.id).then(() => {
+      const images = getScenarioImages(scenario.id)
+      if (images?.bg) setBgImage(images.bg)
+      if (images?.avatar) setAvatarImage(images.avatar)
+      setImagesLoading(false)
+    })
   }
 
   if (!scenario) {

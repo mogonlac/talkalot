@@ -56,7 +56,7 @@ async function callGemini(prompt: string): Promise<string> {
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 1.3,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 4096,
       },
     }),
   });
@@ -90,38 +90,73 @@ export async function generateScenario(
 ): Promise<GeneratedScenario> {
   const tier = eloToTier(currentElo);
 
-  const prompt = `You are a creative director for a language learning app. Generate a WILDLY creative and fun scenario.
+  // Random pools for variability
+  const characters = [
+    "a grumpy old shopkeeper", "a nervous flight attendant", "a strict customs officer",
+    "a distracted barista", "an overly enthusiastic tour guide", "a tired taxi driver",
+    "a confused hotel receptionist", "a chatty market vendor", "a forgetful waiter",
+    "a suspicious landlord", "an impatient train conductor", "a friendly pharmacist",
+    "a bored museum guard", "a dramatic hairdresser", "a clumsy chef",
+    "a nosy neighbor", "a strict librarian", "a cheerful street food seller",
+  ];
+  const settings = [
+    "a busy café", "an airport check-in desk", "a street market stall",
+    "a hotel reception", "a train carriage", "a pharmacy counter",
+    "a restaurant table", "a taxi", "a museum", "a hair salon",
+    "a supermarket checkout", "a post office", "a bus stop", "a doctor's waiting room",
+  ];
+  const goals = [
+    ["Order Coffee", "order a coffee exactly how you want it"],
+    ["Buy Ticket", "buy the right train/bus ticket"],
+    ["Check In", "check into your hotel room"],
+    ["Find Directions", "get directions to where you need to go"],
+    ["Buy Medicine", "describe your symptoms and buy the right medicine"],
+    ["Order Food", "order a meal from the menu"],
+    ["Pay Bill", "pay the bill and sort out a mistake on it"],
+    ["Book Room", "book a room for the right dates"],
+    ["Get Refund", "return a broken item and get your money back"],
+    ["Ask for Help", "explain you're lost and get help"],
+    ["Buy Souvenir", "haggle and buy a souvenir"],
+    ["Catch Taxi", "tell the driver where to go and negotiate price"],
+  ];
 
-The user's skill level is tier ${tier}/5 (1=beginner, 5=near fluent). Language: ${targetLanguage}.
+  const character = characters[Math.floor(Math.random() * characters.length)];
+  const setting = settings[Math.floor(Math.random() * settings.length)];
+  const [goalLabel, goalDesc] = goals[Math.floor(Math.random() * goals.length)];
 
-Be UNPREDICTABLE. Characters can be: aliens, talking animals, historical figures, internet memes, robots, mythological gods, celebrities, fictional characters, medieval peasants, time travellers, sentient objects, random bizarre professions. Make it memorable and funny.
+  const prompt = `You are generating a language learning roleplay scenario. Keep it SHORT and SIMPLE.
 
-Rules for goalLabel: MAXIMUM 3 words. Action verb + noun. Examples: "Buy Bread", "Save World", "Order Coffee", "Escape Prison", "Find Toilet", "Propose Marriage", "Pass Customs", "Win Debate", "Sell Fish", "Survive Dinner".
+Language: ${targetLanguage}. Difficulty tier: ${tier}/5 (1=beginner uses simple words, 5=near-fluent uses natural complex speech).
 
-Rules for openingLine: This is what the character says FIRST, immediately dropping the user into the scene. It must be in character, in ${targetLanguage}, at tier ${tier} complexity. It should naturally set up the goal without spelling it out. It ends with either a question or a clear invitation for the user to respond. Do NOT say "I'm ready" or anything meta.
+The scenario:
+- Character: ${character}
+- Setting: ${setting}  
+- User goal: ${goalDesc}
 
-Rules for voiceProfile: Pick the best fit from: "authoritative_male", "warm_female", "quirky_male", "casual_male", "energetic_female".
+Rules for openingLine: The character speaks FIRST in ${targetLanguage}. One or two short sentences. Natural, in-character, sets up the scene. Ends with a question or prompt for the user. Tier ${tier} vocabulary complexity.
 
-Rules for agentSystemPrompt: Write a full in-character system prompt. The agent must:
-- Stay in character 100% of the time
-- Speak ONLY in ${targetLanguage} at tier ${tier} complexity
-- React naturally and realistically to what the user says
-- Be fun, dynamic, and surprising
-- When the user has clearly accomplished the goal, say exactly: SCENARIO_COMPLETE_PASS
-- If after 6 exchanges the user has clearly failed or given up, say exactly: SCENARIO_COMPLETE_FAIL
-- Never break character or mention the app
+Rules for agentSystemPrompt: Short, clear instructions. The agent must:
+- Play ${character} at ${setting}
+- Speak ONLY in ${targetLanguage}, tier ${tier} difficulty (tier 1 = very simple short sentences, tier 5 = natural fluent speech)
+- Be realistic and stay in character
+- Keep responses SHORT (1-3 sentences max)
+- When the user successfully completes "${goalDesc}", end with: SCENARIO_COMPLETE_PASS
+- If the user clearly gives up or fails after several attempts, end with: SCENARIO_COMPLETE_FAIL
+- Never mention the app or break character
+
+Rules for voiceProfile: pick best fit from "authoritative_male", "warm_female", "quirky_male", "casual_male", "energetic_female".
 
 Respond ONLY with valid JSON (no markdown, no code fences):
 {
-  "title": "Short catchy title (max 6 words)",
-  "goalLabel": "2-3 word goal",
-  "character": "Specific character description",
-  "setting": "Vivid specific setting",
-  "situation": "1-2 sentence description of what the user needs to do",
-  "openingLine": "Character's first line in ${targetLanguage}",
-  "backgroundAudioPrompt": "Short ambient sound description",
-  "agentSystemPrompt": "Full system prompt for the ElevenLabs agent",
-  "voiceProfile": "one of the 5 voice profile strings",
+  "title": "3-5 word catchy title",
+  "goalLabel": "${goalLabel}",
+  "character": "${character} at ${setting}",
+  "setting": "${setting}",
+  "situation": "One sentence: what the user needs to do.",
+  "openingLine": "Character's opening line in ${targetLanguage}",
+  "backgroundAudioPrompt": "2-3 word ambient sound",
+  "agentSystemPrompt": "System prompt for the agent",
+  "voiceProfile": "chosen voice profile",
   "difficultyTier": ${tier},
   "language": "${targetLanguage}",
   "xpReward": ${tier * 50}
@@ -147,12 +182,13 @@ export async function judgeConversation(
   transcript: ConversationMessage[],
   currentElo: number
 ): Promise<JudgmentResult> {
-  if (transcript.length === 0) {
+  const userMessages = transcript.filter((m) => m.role === "user");
+  if (userMessages.length === 0) {
     return {
       passed: false,
       score: 0,
-      feedback: "You didn't say anything! Tap 🎤 and speak next time.",
-      eloChange: -5,
+      feedback: "You didn't get a chance to speak! Try again 🎙️",
+      eloChange: 0,
     };
   }
 

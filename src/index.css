@@ -1,76 +1,55 @@
+/* Import Nunito from Google Fonts — Duolingo's rounded typeface DNA */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Dark theme design system. All colors are HSL. */
-
 @layer base {
   :root {
-    /* Default to dark mode */
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
-
-    --card: 224 71% 6%;
-    --card-foreground: 213 31% 91%;
-
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
-
-    --primary: 262 83% 58%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 213 31% 91%;
-
-    --muted: 223 47% 11%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 262 83% 58%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
-    --ring: 262 83% 58%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 224 71% 6%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 262 83% 58%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 262 83% 58%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 216 34% 17%;
-    --sidebar-ring: 262 83% 58%;
-
-    /* Custom neon colors */
-    --neon-purple: #7c3aed;
-    --neon-blue: #3b82f6;
-    --neon-green: #10b981;
-    --neon-orange: #f59e0b;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 24%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 24%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 24%;
+    --primary: 101 96% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 97%;
+    --secondary-foreground: 0 0% 24%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 69%;
+    --accent: 200 93% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 65%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 101 96% 40%;
+    --radius: 1rem;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    min-height: 100dvh;
+    background: #DFF6FF;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: Inter, sans-serif;
-  }
-}
-
-@layer components {
-  .glow-purple {
-    box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+    font-family: 'Nunito', 'Trebuchet MS', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #3C3C3C;
   }
 
-  .gradient-bg {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  /* Remove default select styling on mobile */
+  select {
+    -webkit-appearance: none;
+    appearance: none;
   }
 }

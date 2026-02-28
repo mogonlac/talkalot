@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { SEED_SCENARIOS, SCENARIO_CATEGORIES } from '@/data/scenarios'
 import { useAuth } from '@/contexts/AuthContext'
-import { Flame, Star, MessageSquare, LogOut, Zap, ChevronUp, ChevronDown } from 'lucide-react'
+import { Flame, Star, MessageSquare, LogOut, Zap, ChevronUp, ChevronDown, ArrowLeft } from 'lucide-react'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
@@ -154,6 +154,12 @@ export default function Feed() {
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-20 px-5 pt-5 pb-3 flex items-center justify-between" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.6), transparent)' }}>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/10 mr-1"
+          >
+            <ArrowLeft className="w-4 h-4 text-white" />
+          </button>
           <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center" style={{ boxShadow: '0 0 15px rgba(124,58,237,0.5)' }}>
             <MessageSquare className="w-4 h-4 text-white" />
           </div>

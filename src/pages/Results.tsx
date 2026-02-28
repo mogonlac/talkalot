@@ -47,10 +47,19 @@ export default function Results() {
   const [loading, setLoading] = useState(true)
   const [xpAnimated, setXpAnimated] = useState(false)
 
-  const { messages, scenario } = location.state || {}
+  const { messages, scenario, sessions, isGauntlet } = location.state || {}
+
+  // For Gauntlet: combine all session messages and scenarios
+  const allMessages = isGauntlet
+    ? sessions?.flatMap((s: any) => s.messages.filter((m: Message) => m.role === 'user').map((m: Message) => m.content)).join('\n')
+    : (messages as Message[])?.filter(m => m.role === 'user').map((m: Message) => m.content).join('\n')
+
+  const scenarioContext = isGauntlet
+    ? sessions?.map((s: any) => s.scenario.title).join(', ')
+    : scenario?.title
 
   useEffect(() => {
-    if (!messages || !scenario) {
+    if ((!messages && !sessions) || (!scenario && !isGauntlet)) {
       navigate('/dashboard')
       return
     }
@@ -60,13 +69,11 @@ export default function Results() {
   const assessConversation = async () => {
     setLoading(true)
     try {
-      const userMessages = (messages as Message[]).filter(m => m.role === 'user').map(m => m.content).join('\n')
-
       const prompt = `You are an English language assessment expert. Assess this user's English speaking performance in a conversation scenario.
 
-Scenario: ${scenario.title}
+Scenario: ${scenarioContext}
 User's responses:
-${userMessages}
+${allMessages}
 
 Rate the user on a scale of 0-100 for:
 1. Grammar accuracy
@@ -270,22 +277,53 @@ Respond ONLY in this exact JSON format:
           </CardContent>
         </Card>
 
+        {/* Gauntlet session breakdown */}
+        {isGauntlet && sessions && (
+          <div className="space-y-2">
+            <h3 className="text-white font-bold text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-orange-400" />
+              Scenarios Completed
+            </h3>
+            {sessions.map((s: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 bg-slate-900/60 rounded-xl px-3 py-2 border border-slate-800">
+                <span className="text-slate-400 text-xs font-bold w-4">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-xs font-bold truncate">{s.scenario.title}</p>
+                  <p className="text-slate-500 text-xs">{s.scenario.character_name} · {s.scenario.character_role}</p>
+                </div>
+                <span className="text-green-400 text-xs font-bold">✓</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="space-y-3 pb-4">
-          <Button
-            onClick={() => navigate(`/scenario/${scenario?.id}`)}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 text-base"
-            style={{ boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Try Again
-          </Button>
+          {isGauntlet ? (
+            <Button
+              onClick={() => navigate('/modes/gauntlet')}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 text-base"
+              style={{ boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              New Gauntlet
+            </Button>
+          ) : (
+            <Button
+              onClick={() => navigate(`/scenario/${scenario?.id}`)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 text-base"
+              style={{ boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+          )}
           <Button
             onClick={() => navigate('/modes/explorer')}
             variant="outline"
             className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 h-12 text-base"
           >
-            New Scenario
+            {isGauntlet ? 'Explorer Mode' : 'New Scenario'}
           </Button>
           <Button
             onClick={() => navigate('/dashboard')}

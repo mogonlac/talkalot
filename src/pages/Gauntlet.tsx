@@ -1,18 +1,21 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Shuffle, Zap, MessageSquare } from 'lucide-react'
-import { SEED_SCENARIOS, SCENARIO_CATEGORIES } from '@/data/scenarios'
-import { useState } from 'react'
+import { ArrowLeft, Shuffle, Zap } from 'lucide-react'
+import { SEED_SCENARIOS } from '@/data/scenarios'
 
 export default function Gauntlet() {
   const navigate = useNavigate()
   const [launching, setLaunching] = useState(false)
+  const [selectedCount, setSelectedCount] = useState<number | null>(null)
 
-  const launchRandom = () => {
+  const launchGauntlet = (count: number) => {
     setLaunching(true)
+    // Pick random scenarios
+    const shuffled = [...SEED_SCENARIOS].sort(() => Math.random() - 0.5)
+    const selected = shuffled.slice(0, count).map(s => s.id)
     setTimeout(() => {
-      const randomIndex = Math.floor(Math.random() * SEED_SCENARIOS.length)
-      navigate(`/feed?start=${randomIndex}`)
+      navigate(`/gauntlet/play`, { state: { scenarioIds: selected, total: count } })
     }, 800)
   }
 
@@ -31,54 +34,65 @@ export default function Gauntlet() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8">
-        {/* Big launch button */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-10">
+        {/* Title */}
         <div className="text-center">
-          <h1 className="text-3xl font-black text-white mb-2">Are you ready?</h1>
+          <h1 className="text-3xl font-black text-white mb-2">How many rounds?</h1>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">
-            A random scenario will be thrown at you. Stay sharp, think fast.
+            Back-to-back scenarios, no breaks. One score at the end.
           </p>
         </div>
 
-        <button
-          onClick={launchRandom}
-          disabled={launching}
-          className={`w-40 h-40 rounded-full flex flex-col items-center justify-center gap-2 transition-all duration-300 font-black text-white text-lg
-            ${launching
-              ? 'scale-95 animate-pulse'
-              : 'hover:scale-105 active:scale-95'
-            }`}
-          style={{
-            background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
-            boxShadow: launching
-              ? '0 0 60px rgba(245,158,11,0.8)'
-              : '0 0 30px rgba(245,158,11,0.5)',
-          }}
-        >
-          {launching ? (
-            <>
-              <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
-              <span className="text-sm">Loading...</span>
-            </>
-          ) : (
-            <>
-              <Zap className="w-10 h-10" />
-              <span>GO!</span>
-            </>
-          )}
-        </button>
-
-        {/* Category preview */}
-        <div className="w-full max-w-sm">
-          <p className="text-slate-500 text-xs text-center mb-3">Could be any of these...</p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {SCENARIO_CATEGORIES.map(cat => (
-              <span key={cat.id} className="text-xs bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full border border-slate-700">
-                {cat.emoji} {cat.label}
-              </span>
+        {/* Round selector */}
+        {!launching && (
+          <div className="flex gap-4">
+            {[3, 5, 10].map(count => (
+              <button
+                key={count}
+                onClick={() => { setSelectedCount(count); launchGauntlet(count) }}
+                className={`w-24 h-24 rounded-2xl flex flex-col items-center justify-center gap-1 font-black text-white transition-all active:scale-95 border-2 ${
+                  selectedCount === count
+                    ? 'border-orange-400 scale-105'
+                    : 'border-orange-500/40 hover:border-orange-400/70'
+                }`}
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b22, #ef444422)',
+                  boxShadow: '0 0 20px rgba(245,158,11,0.2)'
+                }}
+              >
+                <span className="text-4xl font-black">{count}</span>
+                <span className="text-xs text-orange-300 font-medium">
+                  {count === 3 ? 'Quick' : count === 5 ? 'Medium' : 'Epic'}
+                </span>
+              </button>
             ))}
           </div>
-        </div>
+        )}
+
+        {/* Launching state */}
+        {launching && (
+          <div className="flex flex-col items-center gap-4">
+            <div
+              className="w-32 h-32 rounded-full flex flex-col items-center justify-center animate-pulse"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b, #ef4444)',
+                boxShadow: '0 0 60px rgba(245,158,11,0.8)',
+              }}
+            >
+              <Zap className="w-12 h-12 text-white" />
+            </div>
+            <p className="text-orange-300 font-bold text-lg">Get ready...</p>
+          </div>
+        )}
+
+        {/* Info pills */}
+        {!launching && (
+          <div className="flex flex-wrap gap-2 justify-center max-w-xs">
+            <span className="text-xs bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full border border-slate-700">🎲 Random scenarios</span>
+            <span className="text-xs bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full border border-slate-700">⚡ No breaks</span>
+            <span className="text-xs bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full border border-slate-700">📊 One final score</span>
+          </div>
+        )}
       </div>
     </div>
   )

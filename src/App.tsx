@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Explorer from "./pages/Explorer";
 import Gauntlet from "./pages/Gauntlet";
+import GauntletPlay from "./pages/GauntletPlay";
 import Feed from "./pages/Feed";
 import Conversation from "./pages/Conversation";
 import Results from "./pages/Results";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/modes/explorer" element={<Feed />} />
             <Route path="/feed" element={<Feed />} />
             <Route path="/modes/gauntlet" element={<Gauntlet />} />
+            <Route path="/gauntlet/play" element={<GauntletPlay />} />
             <Route path="/scenario/:id" element={<Conversation />} />
             <Route path="/results" element={<Results />} />
             <Route path="*" element={<NotFound />} />

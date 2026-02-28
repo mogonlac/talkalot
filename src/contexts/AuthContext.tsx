@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase, Profile } from '@/lib/supabase'
+import { preloadAllImages } from '@/lib/imageCache'
 
 interface AuthContextType {
   user: User | null
@@ -31,6 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
       if (data) {
         setProfile(data)
+        // Start preloading all scenario images in background
+        preloadAllImages()
         return
       }
       console.log('Profile fetch attempt', i + 1, error)

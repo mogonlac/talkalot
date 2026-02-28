@@ -3,31 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { SEED_SCENARIOS, SCENARIO_CATEGORIES } from '@/data/scenarios'
 import { useAuth } from '@/contexts/AuthContext'
 import { Flame, Star, MessageSquare, LogOut, Zap, ChevronUp, ChevronDown } from 'lucide-react'
+import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ''
-
-async function generateImage(prompt: string): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1 }
-        })
-      }
-    )
-    const data = await response.json()
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded
-    if (b64) return `data:image/png;base64,${b64}`
-    return null
-  } catch (err) {
-    console.error('Image gen error:', err)
-    return null
-  }
-}
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: 'bg-green-500/20 text-green-300 border-green-500/40',
@@ -77,13 +55,18 @@ export default function Feed() {
   const loadImagesForIndex = useCallback(async (index: number) => {
     if (bgImages[index] || imgLoading[index]) return
     const s = SEED_SCENARIOS[index]
+    // Check cache first
+    const cached = getScenarioImages(s.id)
+    if (cached) {
+      if (cached.bg) setBgImages(prev => ({ ...prev, [index]: cached.bg! }))
+      if (cached.avatar) setAvatarImages(prev => ({ ...prev, [index]: cached.avatar! }))
+      return
+    }
     setImgLoading(prev => ({ ...prev, [index]: true }))
-    const [bg, avatar] = await Promise.all([
-      generateImage(`${s.context}, cinematic, dark moody atmospheric lighting, photorealistic, wide angle, no people, 16:9`),
-      generateImage(`Portrait of ${s.character_name}, ${s.character_role}, ${s.character_personality}, professional headshot, dramatic lighting, dark background, photorealistic`)
-    ])
-    if (bg) setBgImages(prev => ({ ...prev, [index]: bg }))
-    if (avatar) setAvatarImages(prev => ({ ...prev, [index]: avatar }))
+    await preloadScenarioImages(s.id)
+    const images = getScenarioImages(s.id)
+    if (images?.bg) setBgImages(prev => ({ ...prev, [index]: images.bg! }))
+    if (images?.avatar) setAvatarImages(prev => ({ ...prev, [index]: images.avatar! }))
     setImgLoading(prev => ({ ...prev, [index]: false }))
   }, [bgImages, imgLoading])
 

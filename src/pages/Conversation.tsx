@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Mic, MicOff, Send, X, Zap } from 'lucide-react'
 import { SEED_SCENARIOS } from '@/data/scenarios'
+import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -22,28 +23,6 @@ const CHARACTER_GRADIENTS = [
   'from-yellow-500 to-amber-500',
 ]
 
-async function generateImage(prompt: string): Promise<string | null> {
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: { sampleCount: 1 }
-        })
-      }
-    )
-    const data = await response.json()
-    const b64 = data.predictions?.[0]?.bytesBase64Encoded
-    if (b64) return `data:image/png;base64,${b64}`
-    return null
-  } catch (err) {
-    console.error('Image gen error:', err)
-    return null
-  }
-}
 
 export default function Conversation() {
   const { id } = useParams()
@@ -89,13 +68,20 @@ export default function Conversation() {
 
   const generateImages = async () => {
     if (!scenario) return
+    // Check cache first
+    const cached = getScenarioImages(scenario.id)
+    if (cached) {
+      if (cached.bg) setBgImage(cached.bg)
+      if (cached.avatar) setAvatarImage(cached.avatar)
+      setImagesLoading(false)
+      return
+    }
+    // Not cached yet - generate and cache
     setImagesLoading(true)
-    const [bg, avatar] = await Promise.all([
-      generateImage(`${scenario.context}, cinematic, dark moody atmospheric lighting, photorealistic, wide angle, no people`),
-      generateImage(`Portrait of ${scenario.character_name}, ${scenario.character_role}, ${scenario.character_personality}, dramatic lighting, dark background, photorealistic, close up face`)
-    ])
-    if (bg) setBgImage(bg)
-    if (avatar) setAvatarImage(avatar)
+    await preloadScenarioImages(scenario.id)
+    const images = getScenarioImages(scenario.id)
+    if (images?.bg) setBgImage(images.bg)
+    if (images?.avatar) setAvatarImage(images.avatar)
     setImagesLoading(false)
   }
 

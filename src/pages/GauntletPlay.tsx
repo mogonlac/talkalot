@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Mic, MicOff, Zap, X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 import { playAudio, stopAudio } from '@/lib/audioManager'
@@ -33,6 +34,7 @@ const CHARACTER_GRADIENTS = [
 export default function GauntletPlay() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { profile } = useAuth()
   const { scenarioIds, total } = location.state || { scenarioIds: [], total: 3 }
 
   const scenarios = scenarioIds
@@ -120,12 +122,15 @@ export default function GauntletPlay() {
     setMessages(newMessages)
 
     try {
+      const targetLanguage = profile?.target_language || 'English'
       const systemPrompt = `You are ${currentScenario.character_name}, a ${currentScenario.character_role}. 
 Personality: ${currentScenario.character_personality}
 Mood: ${currentScenario.character_mood}
 Style: ${currentScenario.character_accent}
 
 Mission context: ${currentScenario.context}
+
+IMPORTANT: You MUST respond ONLY in ${targetLanguage}. The user is learning ${targetLanguage} - they will speak to you in ${targetLanguage} and you must reply in ${targetLanguage} only. Never switch to English.
 
 Stay completely in character at all times. React naturally to what the user says — make them work for their goal. Keep responses short (1-2 sentences max). Be realistic and immersive. Do NOT break character or acknowledge this is a language exercise.
 This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCount >= EXCHANGES_PER_SCENARIO - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
@@ -209,7 +214,12 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       const formData = new FormData()
       formData.append('file', audioBlob, 'audio.webm')
       formData.append('model', 'whisper-large-v3')
-      formData.append('language', 'en')
+      const langCodes: Record<string, string> = {
+        'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Japanese': 'ja',
+        'Mandarin': 'zh', 'Italian': 'it', 'Portuguese': 'pt', 'Arabic': 'ar',
+        'Korean': 'ko', 'Hindi': 'hi', 'English': 'en'
+      }
+      formData.append('language', langCodes[profile?.target_language || 'English'] || 'en')
       const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },

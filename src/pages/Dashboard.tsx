@@ -1,8 +1,9 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import { Flame, Star, Shuffle, Map, LogOut, Zap, Trophy } from 'lucide-react'
+import { Flame, Star, Shuffle, Map, LogOut, Zap, Trophy, Globe } from 'lucide-react'
 import Mascot from '@/components/Mascot'
+import { LANGUAGES } from './LanguageSelect'
 
 function getLevelProgress(xp: number) {
   const xpPerLevel = 500
@@ -87,6 +88,13 @@ export default function Dashboard() {
           <div>
             <p className="text-xl font-black" style={{ color: cefrColor }}>{profile.cefr_level}</p>
             <p className="text-xs font-medium" style={{ color: cefrColor + '99' }}>Level</p>
+          </div>
+        </div>
+        <div className="flex-1 bg-teal-50 rounded-2xl px-4 py-3 flex items-center gap-2 cursor-pointer shadow-sm" onClick={() => navigate('/language-select')}>
+          <Globe className="w-5 h-5 text-teal-500" />
+          <div>
+            <p className="text-xl font-black text-teal-500">{LANGUAGES.find(l => l.code === profile.target_language)?.flag || '🌍'}</p>
+            <p className="text-xs text-teal-400 font-medium">{profile.target_language || 'Pick language'}</p>
           </div>
         </div>
       </div>

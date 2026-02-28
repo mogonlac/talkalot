@@ -13,6 +13,7 @@ export interface Profile {
   elo: number
   streak: number
   cefr_level: string
+  target_language?: string
   created_at?: string
 }
 

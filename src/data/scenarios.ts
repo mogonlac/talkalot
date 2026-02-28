@@ -1,5 +1,21 @@
 import { Scenario } from '@/lib/supabase'
 
+// ElevenLabs voice IDs mapped by character
+export const CHARACTER_VOICES: Record<string, string> = {
+  'Marco': 'cjVigY5qzO86Huf0OWal',       // Eric - smooth, male American (Italian waiter)
+  'Sarah': 'EXAVITQu4vr4xnSDxMaL',       // Sarah - mature female American (check-in agent)
+  'James': 'iP95p4xoKVk53GoZ742B',        // Chris - charming male American (HR manager)
+  'Dr. Patel': 'nPczCjzI2devNBz1zQrb',   // Brian - deep male (doctor)
+  'Tina': 'FGY2WhTYpPnrIDTdsKH5',        // Laura - quirky female (retail)
+  'Dave': 'IKne3meq5aSn9XLyUdCD',        // Charlie - deep male Australian (neighbour)
+  'Claire': 'Xb7hH8MSUJpSbSDYk0k2',     // Alice - clear female British (manager)
+  'Roberto': 'JBFqnCBsd6RMkjVDRZzb',    // George - warm male British (hotel)
+  'Kevin': 'TX3LPaxmHKxFdv7VOQHJ',      // Liam - energetic male American (tech support)
+  'Alex': 'SAz9YHcvj6GT2YYXdXww',       // River - neutral (date)
+  'Sandra': 'cgSgspJ2msm6clMCkdW9',     // Jessica - playful female (estate agent)
+  'Nurse Williams': 'pFZP5JQG7iQjIQuC4Bku', // Lily - female British (nurse)
+}
+
 export const SCENARIO_CATEGORIES = [
   { id: 'food', label: 'Food & Dining', emoji: '🍕', color: 'from-orange-500 to-red-500' },
   { id: 'travel', label: 'Travel', emoji: '✈️', color: 'from-blue-500 to-cyan-500' },

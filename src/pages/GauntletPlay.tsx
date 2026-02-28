@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Mic, MicOff, Zap, X } from 'lucide-react'
-import { SEED_SCENARIOS } from '@/data/scenarios'
+import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 
 interface Message {
@@ -160,9 +160,10 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
 
   const speakText = async (text: string): Promise<void> => {
     if (!ELEVENLABS_API_KEY) return
+    const voiceId = currentScenario ? (CHARACTER_VOICES[currentScenario.character_name] || 'JBFqnCBsd6RMkjVDRZzb') : 'JBFqnCBsd6RMkjVDRZzb'
     return new Promise(async (resolve) => {
       try {
-        const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM/stream', {
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
           method: 'POST',
           headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
           body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })

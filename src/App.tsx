@@ -1,7 +1,6 @@
 /**
  * App.tsx — primitive shell. Lovable will replace visual design.
  */
-
 import { useLanguageTutor } from "./hooks/useLanguageTutor";
 import { ScenarioCard } from "./components/ScenarioCard";
 
@@ -13,6 +12,7 @@ function App() {
       <ScenarioCard
         phase={tutor.phase}
         scenario={tutor.scenario}
+        images={tutor.images}
         currentElo={tutor.currentElo}
         eloLabel={tutor.eloLabel}
         lastResult={tutor.lastResult}
@@ -20,6 +20,7 @@ function App() {
         errorMessage={tutor.errorMessage}
         isSpeaking={tutor.isSpeaking}
         targetLanguage={tutor.targetLanguage}
+        nextScenarioReady={tutor.nextScenarioReady}
         onSetLanguage={tutor.setTargetLanguage}
         onStartTalking={tutor.startConversation}
         onStopTalking={tutor.stopConversation}

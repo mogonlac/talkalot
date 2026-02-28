@@ -1,7 +1,7 @@
 /**
  * useLanguageTutor.ts
  * Single source of truth for all business logic.
- * UI components consume this hook and stay completely dumb.
+ * Prefetches next scenario + images in background while user is in current one.
  */
 
 import { useState, useCallback, useEffect, useRef } from "react";
@@ -14,6 +14,7 @@ import {
   JudgmentResult,
   VoiceProfile,
 } from "../services/geminiService";
+import { generateScenarioImages, ScenarioImages } from "../services/imageService";
 import {
   applyEloChange,
   formatEloChange,
@@ -34,68 +35,66 @@ function getAgentId(profile: VoiceProfile): string {
   return AGENT_MAP[profile] || Object.values(AGENT_MAP).find(Boolean) || "";
 }
 
-// ─── Supported languages ────────────────────────────────────────────────────
 export const SUPPORTED_LANGUAGES = [
-  "English",
-  "French",
-  "Spanish",
-  "German",
-  "Japanese",
-  "Mandarin",
-  "Italian",
-  "Portuguese",
+  "English", "French", "Spanish", "German",
+  "Japanese", "Mandarin", "Italian", "Portuguese",
 ];
 
-// ─── State machine phases ───────────────────────────────────────────────────
 export type AppPhase =
-  | "loading"       // Gemini generating next scenario
+  | "loading"       // First load only — no prefetched scenario ready yet
   | "ready"         // Scenario ready, waiting for user
   | "talking"       // Active ElevenLabs conversation
   | "judging"       // Gemini judging the conversation
   | "result_pass"   // Showing pass result
   | "result_fail"   // Showing fail result
-  | "error";        // Something went wrong
+  | "error";
 
-// ─── Public interface ───────────────────────────────────────────────────────
 export interface TutorState {
   phase: AppPhase;
   currentElo: number;
   eloLabel: string;
   scenario: GeneratedScenario | null;
+  images: ScenarioImages;
   lastResult: JudgmentResult | null;
   lastEloChange: string;
   errorMessage: string;
   isSpeaking: boolean;
   targetLanguage: string;
+  nextScenarioReady: boolean;
   setTargetLanguage: (lang: string) => void;
   startConversation: () => Promise<void>;
   stopConversation: () => Promise<void>;
   swipeNext: () => void;
 }
 
-// ─── Hook ───────────────────────────────────────────────────────────────────
+// Prefetched next scenario + images stored outside React state to avoid re-renders
+interface PrefetchedData {
+  scenario: GeneratedScenario;
+  images: ScenarioImages;
+}
+
 export function useLanguageTutor(): TutorState {
   const [phase, setPhase] = useState<AppPhase>("loading");
   const [currentElo, setCurrentElo] = useState<number>(STARTING_ELO);
   const [scenario, setScenario] = useState<GeneratedScenario | null>(null);
+  const [images, setImages] = useState<ScenarioImages>({ backgroundUrl: null, characterUrl: null });
   const [lastResult, setLastResult] = useState<JudgmentResult | null>(null);
   const [lastEloChange, setLastEloChange] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [targetLanguage, setTargetLanguage] = useState<string>("English");
+  const [nextScenarioReady, setNextScenarioReady] = useState<boolean>(false);
 
-  // Accumulate transcript during conversation
   const transcriptRef = useRef<ConversationMessage[]>([]);
-  // Prevent double-judging on rapid disconnect events
   const judgingRef = useRef<boolean>(false);
+  const prefetchRef = useRef<PrefetchedData | null>(null);
+  const prefetchingRef = useRef<boolean>(false);
 
-  // ── ElevenLabs conversation hook ──────────────────────────────────────────
+  // ── ElevenLabs ─────────────────────────────────────────────────────────
   const conversation = useConversation({
     onConnect: () => {
-      console.log("[ElevenLabs] Connected");
       setPhase("talking");
     },
     onDisconnect: () => {
-      console.log("[ElevenLabs] Disconnected");
       if (!judgingRef.current) {
         judgingRef.current = true;
         handleJudge();
@@ -104,8 +103,6 @@ export function useLanguageTutor(): TutorState {
     onMessage: (message: { message: string; source: string }) => {
       const role = message.source === "user" ? "user" : "agent";
       transcriptRef.current.push({ role, text: message.message });
-
-      // Auto-end session if agent signals completion
       if (
         message.source !== "user" &&
         (message.message.includes("SCENARIO_COMPLETE_PASS") ||
@@ -115,41 +112,78 @@ export function useLanguageTutor(): TutorState {
       }
     },
     onError: (error: string) => {
-      console.error("[ElevenLabs] Error:", error);
-      setErrorMessage(`ElevenLabs error: ${error}`);
+      setErrorMessage(`ElevenLabs: ${error}`);
       setPhase("error");
     },
   });
 
-  // ── Generate next scenario ────────────────────────────────────────────────
+  // ── Prefetch next scenario + images in background ───────────────────────
+  const prefetchNext = useCallback(async (elo: number, lang: string) => {
+    if (prefetchingRef.current) return;
+    prefetchingRef.current = true;
+    setNextScenarioReady(false);
+    prefetchRef.current = null;
+
+    try {
+      const next = await generateScenario(elo, lang);
+      // Generate images in parallel — don't block on them
+      const imgs = await generateScenarioImages(next.character, next.setting, next.title);
+      prefetchRef.current = { scenario: next, images: imgs };
+      setNextScenarioReady(true);
+    } catch (err) {
+      console.error("[Prefetch] Failed:", err);
+      // Silently fail — swipeNext will try again
+    } finally {
+      prefetchingRef.current = false;
+    }
+  }, []);
+
+  // ── Load scenario (uses prefetch if available, else fetches fresh) ──────
   const loadNextScenario = useCallback(
     async (elo: number, lang: string) => {
-      setPhase("loading");
       setLastResult(null);
       setLastEloChange("");
       transcriptRef.current = [];
       judgingRef.current = false;
 
-      try {
-        const next = await generateScenario(elo, lang);
+      if (prefetchRef.current) {
+        // Instant — use prefetched data
+        const { scenario: next, images: imgs } = prefetchRef.current;
+        prefetchRef.current = null;
+        setNextScenarioReady(false);
         setScenario(next);
+        setImages(imgs);
         setPhase("ready");
-      } catch (err) {
-        console.error("[Gemini] Failed to generate scenario:", err);
-        setErrorMessage("Failed to generate scenario. Check your Gemini API key.");
-        setPhase("error");
+        // Start prefetching the one after
+        prefetchNext(elo, lang);
+      } else {
+        // First load or prefetch failed — show loading screen
+        setPhase("loading");
+        try {
+          const next = await generateScenario(elo, lang);
+          const imgs = await generateScenarioImages(next.character, next.setting, next.title);
+          setScenario(next);
+          setImages(imgs);
+          setPhase("ready");
+          // Start prefetching next
+          prefetchNext(elo, lang);
+        } catch (err) {
+          console.error("[Gemini] Failed to generate scenario:", err);
+          setErrorMessage("Failed to generate scenario. Check your Gemini API key.");
+          setPhase("error");
+        }
       }
     },
-    []
+    [prefetchNext]
   );
 
   // Load first scenario on mount
   useEffect(() => {
-    loadNextScenario(STARTING_ELO, targetLanguage);
+    loadNextScenario(STARTING_ELO, "English");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Start ElevenLabs conversation ─────────────────────────────────────────
+  // ── Start conversation ──────────────────────────────────────────────────
   const startConversation = useCallback(async () => {
     if (!scenario) return;
     transcriptRef.current = [];
@@ -157,9 +191,7 @@ export function useLanguageTutor(): TutorState {
 
     const agentId = getAgentId(scenario.voiceProfile);
     if (!agentId) {
-      setErrorMessage(
-        "No ElevenLabs agent ID configured. Add your agent IDs to the .env file."
-      );
+      setErrorMessage("No ElevenLabs agent ID configured. Add agent IDs to .env file.");
       setPhase("error");
       return;
     }
@@ -170,28 +202,23 @@ export function useLanguageTutor(): TutorState {
         agentId,
         overrides: {
           agent: {
-            prompt: {
-              prompt: scenario.agentSystemPrompt,
-            },
+            prompt: { prompt: scenario.agentSystemPrompt },
             firstMessage: scenario.openingLine,
           },
         },
       });
     } catch (err) {
       console.error("[ElevenLabs] Failed to start:", err);
-      setErrorMessage(
-        "Could not start conversation. Check microphone permissions and agent ID."
-      );
+      setErrorMessage("Could not start. Check mic permissions and agent ID.");
       setPhase("error");
     }
   }, [scenario, conversation]);
 
-  // ── Stop conversation manually ────────────────────────────────────────────
+  // ── Stop conversation ───────────────────────────────────────────────────
   const stopConversation = useCallback(async () => {
     try {
       await conversation.endSession();
     } catch {
-      // endSession failed — judge what we have
       if (!judgingRef.current) {
         judgingRef.current = true;
         handleJudge();
@@ -199,68 +226,57 @@ export function useLanguageTutor(): TutorState {
     }
   }, [conversation]);
 
-  // ── Judge conversation via Gemini ─────────────────────────────────────────
+  // ── Judge conversation ──────────────────────────────────────────────────
   const handleJudge = useCallback(async () => {
     if (!scenario) return;
     setPhase("judging");
 
     try {
-      const result = await judgeConversation(
-        scenario,
-        transcriptRef.current,
-        currentElo
-      );
+      const result = await judgeConversation(scenario, transcriptRef.current, currentElo);
       const newElo = applyEloChange(currentElo, result.eloChange);
       setLastResult(result);
       setLastEloChange(formatEloChange(result.eloChange));
       setCurrentElo(newElo);
       setPhase(result.passed ? "result_pass" : "result_fail");
-    } catch (err) {
-      console.error("[Gemini] Judgment failed:", err);
-      const agentText = transcriptRef.current
-        .filter((m) => m.role === "agent")
-        .map((m) => m.text)
-        .join(" ");
+      // Start prefetching next scenario with updated ELO
+      prefetchNext(newElo, targetLanguage);
+    } catch {
+      const agentText = transcriptRef.current.filter((m) => m.role === "agent").map((m) => m.text).join(" ");
       const passed = agentText.includes("SCENARIO_COMPLETE_PASS");
       const eloChange = passed ? 15 : -10;
       const newElo = applyEloChange(currentElo, eloChange);
-
-      setLastResult({
-        passed,
-        score: passed ? 60 : 20,
-        feedback: passed ? "Well done! 🎉" : "Keep practicing! 💪",
-        eloChange,
-      });
+      setLastResult({ passed, score: passed ? 60 : 20, feedback: passed ? "Well done! 🎉" : "Keep practicing! 💪", eloChange });
       setLastEloChange(formatEloChange(eloChange));
       setCurrentElo(newElo);
       setPhase(passed ? "result_pass" : "result_fail");
+      prefetchNext(newElo, targetLanguage);
     }
-  }, [scenario, currentElo]);
+  }, [scenario, currentElo, targetLanguage, prefetchNext]);
 
-  // ── Swipe to next scenario ────────────────────────────────────────────────
+  // ── Swipe next ──────────────────────────────────────────────────────────
   const swipeNext = useCallback(() => {
     loadNextScenario(currentElo, targetLanguage);
   }, [currentElo, targetLanguage, loadNextScenario]);
 
-  // ── Language change ───────────────────────────────────────────────────────
-  const handleSetLanguage = useCallback(
-    (lang: string) => {
-      setTargetLanguage(lang);
-      loadNextScenario(currentElo, lang);
-    },
-    [currentElo, loadNextScenario]
-  );
+  // ── Language change ─────────────────────────────────────────────────────
+  const handleSetLanguage = useCallback((lang: string) => {
+    setTargetLanguage(lang);
+    prefetchRef.current = null;
+    loadNextScenario(currentElo, lang);
+  }, [currentElo, loadNextScenario]);
 
   return {
     phase,
     currentElo,
     eloLabel: eloToLabel(currentElo),
     scenario,
+    images,
     lastResult,
     lastEloChange,
     errorMessage,
     isSpeaking: conversation.isSpeaking,
     targetLanguage,
+    nextScenarioReady,
     setTargetLanguage: handleSetLanguage,
     startConversation,
     stopConversation,

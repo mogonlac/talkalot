@@ -211,9 +211,9 @@ export default function Feed() {
           </div>
         </div>
 
-        {/* Mission box */}
+        {/* Tagline */}
         <div className="bg-white/10 border border-white/20 rounded-2xl p-3 backdrop-blur-sm mb-4">
-          <p className="text-white/70 text-xs leading-relaxed">{scenario.context}</p>
+          <p className="text-white font-medium text-sm leading-relaxed">{scenario.tagline}</p>
         </div>
 
         {/* Start button */}

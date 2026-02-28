@@ -37,6 +37,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Rushed and slightly irritable',
     character_accent: 'Strong Italian accent',
     opening_line: "Ey! You ready to order or what? We very busy tonight!",
+    tagline: "Order for two — one has a nut allergy. Marco is losing patience.",
     context: '🎯 MISSION: Order a meal for yourself and a friend with a nut allergy. You must ask about allergens, order two different mains, and get the bill split separately — all before Marco loses his patience.'
   },
   {
@@ -50,6 +51,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Neutral, by-the-book',
     character_accent: 'Standard British',
     opening_line: "Good morning. Passport and booking reference please. Your flight closes in 40 minutes.",
+    tagline: "Your bag is 3kg over. Flight in 40 mins. No cash. Talk your way out.",
     context: '🎯 MISSION: Your bag is 3kg overweight and you have no cash for the £60 excess fee. Convince Sarah to waive the fee or find another solution — without losing your cool. Your flight boards in 40 minutes.'
   },
   {
@@ -63,6 +65,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Focused and evaluative',
     character_accent: 'American',
     opening_line: "Thanks for coming in. So, tell me — why should we hire you over the other 200 candidates?",
+    tagline: "200 candidates. One job. Don't blow it.",
     context: '🎯 MISSION: Land the job. Answer James\'s tough questions confidently, give a specific example of a past achievement, and ask at least one smart question about the role — all without rambling or going blank.'
   },
   {
@@ -76,6 +79,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Attentive and caring',
     character_accent: 'Indian-British',
     opening_line: "Hello, come in and take a seat. What seems to be the trouble today?",
+    tagline: "5 days of headaches and blurry vision. Get a specialist referral.",
     context: '🎯 MISSION: You\'ve had a persistent headache, blurry vision and fatigue for 5 days. Clearly describe all your symptoms, answer Dr. Patel\'s questions accurately, and successfully request a referral to a specialist.'
   },
   {
@@ -89,6 +93,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Unenthusiastic',
     character_accent: 'Northern English',
     opening_line: "Right, so what seems to be the problem with it then?",
+    tagline: "Broken headphones. Tina doesn't want to help. Get your refund.",
     context: '🎯 MISSION: Your headphones broke after 2 weeks. Get a full refund — not a store credit, not an exchange — a refund. Tina will push back at every step. Stay polite, firm, and know your consumer rights.'
   },
   {
@@ -102,6 +107,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Warm and enthusiastic',
     character_accent: 'Australian',
     opening_line: "G'day! Just moved in next door? Welcome to the building mate!",
+    tagline: "New flat. Chatty neighbour. Get the wifi password and escape.",
     context: '🎯 MISSION: Make a good first impression. Introduce yourself naturally, find out the building\'s bin collection day and wifi password (without being awkward), and politely end the conversation when Dave won\'t stop talking.'
   },
   {
@@ -115,6 +121,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Cautious but open',
     character_accent: 'Standard British',
     opening_line: "So you wanted to talk about your compensation package? What's on your mind?",
+    tagline: "You want 15% more. Claire controls the budget. Make your case.",
     context: '🎯 MISSION: Ask for a 15% pay rise. Back it up with specific achievements from the last 6 months, handle Claire\'s objections about budget, and leave the meeting with at least a firm commitment to review your salary.'
   },
   {
@@ -128,6 +135,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Sympathetic but defensive',
     character_accent: 'Spanish accent',
     opening_line: "Good evening, welcome back. Is everything okay with your room?",
+    tagline: "No hot water. Broken AC. Building site view. Get upgraded.",
     context: '🎯 MISSION: Your room has no hot water, the air con is broken, and it overlooks a noisy building site. Get upgraded to a better room at no extra cost — or failing that, a meaningful discount on your bill.'
   },
   {
@@ -141,6 +149,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Helpful but robotic',
     character_accent: 'American Midwest',
     opening_line: "Thank you for calling TechHelp, my name is Kevin, how can I assist you today?",
+    tagline: "3 days no internet. Kevin loves jargon. Skip the script.",
     context: '🎯 MISSION: Your internet has been down for 3 days. Get Kevin to escalate your case to a senior engineer and schedule a home visit — without being put on hold indefinitely or fobbed off with basic troubleshooting steps again.'
   },
   {
@@ -154,6 +163,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Excited but testing the waters',
     character_accent: 'Southern American',
     opening_line: "Okay so I have to say — your profile said you were interesting. Prove it.",
+    tagline: "First date. High expectations. Land a second one.",
     context: '🎯 MISSION: Impress Alex on a first date. Share something genuinely interesting about yourself, ask thoughtful questions, handle the awkward silence at the 3-minute mark, and get Alex to agree to a second date.'
   },
   {
@@ -167,6 +177,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'High energy, persuasive',
     character_accent: 'London',
     opening_line: "Welcome! This is a fantastic property — it won't be on the market long. Shall we start the tour?",
+    tagline: "Damp walls. No dishwasher. £200 over budget. Don't sign anything.",
     context: '🎯 MISSION: The flat has damp on the walls, no dishwasher and is £200 over your budget. Find out about all the hidden problems by asking the right questions, then negotiate the rent down before Sandra pressures you to sign today.'
   },
   {
@@ -180,6 +191,7 @@ export const SEED_SCENARIOS: Omit<Scenario, 'created_at'>[] = [
     character_mood: 'Professional but stretched thin',
     character_accent: 'Welsh',
     opening_line: "Right, what's brought you in tonight? Give me the short version first.",
+    tagline: "Chest pain for 2 hours. Convince the nurse it's urgent.",
     context: '🎯 MISSION: You have severe chest pain that started 2 hours ago. Clearly communicate your symptoms, your medical history and current medications, convince Nurse Williams this is urgent enough to be seen immediately rather than waiting 4 hours.'
   },
 ]

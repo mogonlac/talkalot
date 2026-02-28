@@ -46,26 +46,43 @@ export default function Feed() {
   }, [user, loading, navigate])
 
   const loadImagesForIndex = useCallback(async (index: number) => {
-    if ((bgImages[index] && avatarImages[index]) || imgLoading[index]) return
+    if (imgLoading[index]) return
     const s = SEED_SCENARIOS[index]
+
+    // Check cache first
     const cached = getScenarioImages(s.id)
-    if (cached?.bg && cached?.avatar) {
+    if (cached?.bg || cached?.avatar) {
       if (cached.bg) setBgImages(prev => ({ ...prev, [index]: cached.bg! }))
       if (cached.avatar) setAvatarImages(prev => ({ ...prev, [index]: cached.avatar! }))
-      return
+      if (cached.bg && cached.avatar) return // Both loaded, done
     }
+
+    // Still missing images - generate now
+    if (bgImages[index] && avatarImages[index]) return
     setImgLoading(prev => ({ ...prev, [index]: true }))
     await preloadScenarioImages(s.id)
     const images = getScenarioImages(s.id)
     if (images?.bg) setBgImages(prev => ({ ...prev, [index]: images.bg! }))
     if (images?.avatar) setAvatarImages(prev => ({ ...prev, [index]: images.avatar! }))
     setImgLoading(prev => ({ ...prev, [index]: false }))
+    console.log(`Images loaded for scenario ${s.id}:`, !!images?.bg, !!images?.avatar)
   }, [bgImages, avatarImages, imgLoading])
 
   useEffect(() => {
     loadImagesForIndex(currentIndex)
     if (currentIndex + 1 < SEED_SCENARIOS.length) loadImagesForIndex(currentIndex + 1)
   }, [currentIndex])
+
+  // Poll every 2 seconds to pick up images that were preloaded in background
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const s = SEED_SCENARIOS[currentIndex]
+      const cached = getScenarioImages(s.id)
+      if (cached?.bg && !bgImages[currentIndex]) setBgImages(prev => ({ ...prev, [currentIndex]: cached.bg! }))
+      if (cached?.avatar && !avatarImages[currentIndex]) setAvatarImages(prev => ({ ...prev, [currentIndex]: cached.avatar! }))
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [currentIndex, bgImages, avatarImages])
 
   const goToNext = () => {
     if (isAnimating || currentIndex >= SEED_SCENARIOS.length - 1) return

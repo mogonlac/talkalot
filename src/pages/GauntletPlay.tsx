@@ -129,9 +129,10 @@ export default function GauntletPlay() {
 Personality: ${currentScenario.character_personality}
 Mood: ${currentScenario.character_mood}
 Style: ${currentScenario.character_accent}
-Context: ${currentScenario.context}
 
-Stay completely in character. Keep responses short (1-2 sentences max). Be realistic and immersive.
+Mission context: ${currentScenario.context}
+
+Stay completely in character at all times. React naturally to what the user says — make them work for their goal. Keep responses short (1-2 sentences max). Be realistic and immersive. Do NOT break character or acknowledge this is a language exercise.
 This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCount >= EXCHANGES_PER_SCENARIO - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
 
       const conversationHistory = newMessages

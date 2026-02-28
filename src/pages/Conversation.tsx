@@ -124,9 +124,10 @@ export default function Conversation() {
 Personality: ${scenario.character_personality}
 Mood: ${scenario.character_mood}
 Style: ${scenario.character_accent}
-Context: ${scenario.context}
 
-Stay completely in character. Keep responses short (1-3 sentences max). Be realistic and immersive.
+Mission context: ${scenario.context}
+
+Stay completely in character at all times. React naturally to what the user says — make them work for their goal. Keep responses short (1-3 sentences max). Be realistic and immersive. Do NOT break character or acknowledge this is a language exercise.
 This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX_EXCHANGES - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
 
       const conversationHistory = newMessages
@@ -284,6 +285,13 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
         )}
         <h2 className="text-white font-black text-lg mt-3">{scenario.character_name}</h2>
         <p className="text-slate-400 text-xs">{scenario.character_role}</p>
+      </div>
+
+      {/* Mission banner */}
+      <div className="relative z-20 mx-5 mb-2 flex-shrink-0">
+        <div className="bg-black/50 border border-purple-500/30 rounded-xl px-3 py-2 backdrop-blur-sm">
+          <p className="text-purple-300 text-xs leading-relaxed">{scenario.context}</p>
+        </div>
       </div>
 
       {/* Latest AI message — big, center stage */}

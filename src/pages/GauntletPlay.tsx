@@ -34,7 +34,6 @@ const CHARACTER_GRADIENTS = [
 export default function GauntletPlay() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { profile } = useAuth()
   const { scenarioIds, total } = location.state || { scenarioIds: [], total: 3 }
 
   const scenarios = scenarioIds
@@ -122,15 +121,12 @@ export default function GauntletPlay() {
     setMessages(newMessages)
 
     try {
-      const targetLanguage = profile?.target_language || 'English'
       const systemPrompt = `You are ${currentScenario.character_name}, a ${currentScenario.character_role}. 
 Personality: ${currentScenario.character_personality}
 Mood: ${currentScenario.character_mood}
 Style: ${currentScenario.character_accent}
 
 Mission context: ${currentScenario.context}
-
-IMPORTANT: You MUST respond ONLY in ${targetLanguage}. The user is learning ${targetLanguage} - they will speak to you in ${targetLanguage} and you must reply in ${targetLanguage} only. Never switch to English.
 
 Stay completely in character at all times. React naturally to what the user says — make them work for their goal. Keep responses short (1-2 sentences max). Be realistic and immersive. Do NOT break character or acknowledge this is a language exercise.
 This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCount >= EXCHANGES_PER_SCENARIO - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
@@ -214,12 +210,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       const formData = new FormData()
       formData.append('file', audioBlob, 'audio.webm')
       formData.append('model', 'whisper-large-v3')
-      const langCodes: Record<string, string> = {
-        'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Japanese': 'ja',
-        'Mandarin': 'zh', 'Italian': 'it', 'Portuguese': 'pt', 'Arabic': 'ar',
-        'Korean': 'ko', 'Hindi': 'hi', 'English': 'en'
-      }
-      formData.append('language', langCodes[profile?.target_language || 'English'] || 'en')
+      formData.append('language', 'en')
       const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },

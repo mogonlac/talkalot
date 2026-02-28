@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Mascot from '@/components/Mascot'
@@ -22,14 +21,8 @@ export default function Auth() {
     setLoading(true)
     setError('')
     const { error } = await signIn(email, password)
-    if (error) {
-      setError(error.message)
-    } else {
-      // Check if language is set
-      const { data: profile } = await supabase.from('profiles').select('target_language').eq('id', (await supabase.auth.getUser()).data.user?.id || '').single()
-      if (!profile?.target_language) navigate('/language-select')
-      else navigate('/dashboard')
-    }
+    if (error) setError(error.message)
+    else navigate('/dashboard')
     setLoading(false)
   }
 
@@ -40,7 +33,7 @@ export default function Auth() {
     if (!username.trim()) { setError('Username is required'); setLoading(false); return }
     const { error } = await signUp(email, password, username)
     if (error) setError(error.message)
-    else navigate('/language-select')
+    else navigate('/dashboard')
     setLoading(false)
   }
 

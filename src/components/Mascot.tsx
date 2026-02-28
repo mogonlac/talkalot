@@ -1,54 +1,63 @@
 export default function Mascot({ className = '' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 200 280"
+      viewBox="0 0 160 200"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
     >
-      {/* Hair */}
-      <ellipse cx="100" cy="58" rx="42" ry="18" fill="#7C3AED" />
-      <rect x="58" y="48" width="84" height="20" fill="#7C3AED" rx="4" />
+      {/* Shadow */}
+      <ellipse cx="80" cy="196" rx="36" ry="6" fill="#E2E8F0" />
 
-      {/* Head */}
-      <circle cx="100" cy="90" r="48" fill="#FBBF24" />
+      {/* Body */}
+      <rect x="44" y="108" width="72" height="68" rx="28" fill="#7C3AED" />
 
-      {/* Eyes — large pill-shaped */}
-      <rect x="72" y="78" width="20" height="26" rx="10" fill="#111111" />
-      <rect x="108" y="78" width="20" height="26" rx="10" fill="#111111" />
+      {/* Left arm */}
+      <rect x="14" y="112" width="34" height="22" rx="11" fill="#7C3AED" transform="rotate(-15 31 123)" />
+      {/* Left hand */}
+      <circle cx="18" cy="136" r="12" fill="#FCD34D" />
 
-      {/* Mouth — simple curved line */}
-      <path d="M86 108 Q100 120 114 108" stroke="#111111" strokeWidth="3.5" strokeLinecap="round" fill="none" />
-
-      {/* Rosy cheeks */}
-      <ellipse cx="72" cy="108" rx="10" ry="6" fill="#F87171" opacity="0.5" />
-      <ellipse cx="128" cy="108" rx="10" ry="6" fill="#F87171" opacity="0.5" />
-
-      {/* Neck */}
-      <rect x="88" y="134" width="24" height="16" fill="#FBBF24" rx="4" />
-
-      {/* Torso */}
-      <rect x="62" y="148" width="76" height="72" rx="24" fill="#14B8A6" />
-
-      {/* Left arm — slightly raised, bouncy */}
-      <rect x="22" y="148" width="44" height="28" rx="14" fill="#14B8A6" transform="rotate(-20 44 162)" />
-      {/* Left mitten hand */}
-      <ellipse cx="30" cy="178" rx="18" ry="14" fill="#FBBF24" />
-
-      {/* Right arm — raised up */}
-      <rect x="134" y="140" width="44" height="28" rx="14" fill="#14B8A6" transform="rotate(25 156 154)" />
-      {/* Right mitten hand */}
-      <ellipse cx="172" cy="164" rx="18" ry="14" fill="#FBBF24" />
+      {/* Right arm */}
+      <rect x="112" y="112" width="34" height="22" rx="11" fill="#7C3AED" transform="rotate(15 129 123)" />
+      {/* Right hand */}
+      <circle cx="142" cy="136" r="12" fill="#FCD34D" />
 
       {/* Left leg */}
-      <rect x="72" y="214" width="28" height="48" rx="14" fill="#7C3AED" />
+      <rect x="54" y="166" width="24" height="36" rx="12" fill="#5B21B6" />
       {/* Left foot */}
-      <ellipse cx="86" cy="264" rx="20" ry="10" fill="#111111" />
+      <ellipse cx="66" cy="200" rx="16" ry="8" fill="#1E293B" />
 
       {/* Right leg */}
-      <rect x="100" y="218" width="28" height="44" rx="14" fill="#7C3AED" />
+      <rect x="82" y="166" width="24" height="36" rx="12" fill="#5B21B6" />
       {/* Right foot */}
-      <ellipse cx="114" cy="264" rx="20" ry="10" fill="#111111" />
+      <ellipse cx="94" cy="200" rx="16" ry="8" fill="#1E293B" />
+
+      {/* Neck */}
+      <rect x="68" y="100" width="24" height="16" rx="8" fill="#FCD34D" />
+
+      {/* Head */}
+      <circle cx="80" cy="76" r="44" fill="#FCD34D" />
+
+      {/* Hair */}
+      <path d="M36 64 Q40 28 80 24 Q120 28 124 64" fill="#7C3AED" />
+      <ellipse cx="80" cy="24" rx="26" ry="10" fill="#7C3AED" />
+
+      {/* Left eye */}
+      <rect x="56" y="64" width="16" height="22" rx="8" fill="#1E293B" />
+      {/* Left eye shine */}
+      <circle cx="60" cy="68" r="3" fill="white" />
+
+      {/* Right eye */}
+      <rect x="88" y="64" width="16" height="22" rx="8" fill="#1E293B" />
+      {/* Right eye shine */}
+      <circle cx="92" cy="68" r="3" fill="white" />
+
+      {/* Smile */}
+      <path d="M64 94 Q80 106 96 94" stroke="#1E293B" strokeWidth="3" strokeLinecap="round" fill="none" />
+
+      {/* Cheeks */}
+      <ellipse cx="56" cy="90" rx="9" ry="5" fill="#F87171" opacity="0.5" />
+      <ellipse cx="104" cy="90" rx="9" ry="5" fill="#F87171" opacity="0.5" />
     </svg>
   )
 }

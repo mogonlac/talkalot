@@ -13,7 +13,6 @@ import GauntletPlay from "./pages/GauntletPlay";
 import Feed from "./pages/Feed";
 import Conversation from "./pages/Conversation";
 import Results from "./pages/Results";
-import LanguageSelect from "./pages/LanguageSelect";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,7 +34,6 @@ const App = () => (
             <Route path="/gauntlet/play" element={<GauntletPlay />} />
             <Route path="/scenario/:id" element={<Conversation />} />
             <Route path="/results" element={<Results />} />
-            <Route path="/language-select" element={<LanguageSelect />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

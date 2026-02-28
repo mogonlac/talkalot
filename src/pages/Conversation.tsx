@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 import { playAudio, stopAudio } from '@/lib/audioManager'
-import { supabase } from '@/lib/supabase'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -30,7 +29,6 @@ const CHARACTER_GRADIENTS = [
 export default function Conversation() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { profile } = useAuth()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -117,21 +115,13 @@ export default function Conversation() {
     setMessages(newMessages)
 
     try {
-      // Read language fresh from Supabase to avoid stale cache
-      let targetLanguage = profile?.target_language || 'Spanish'
-      if (user) {
-        const { data: freshProfile } = await supabase.from('profiles').select('target_language').eq('id', user.id).single()
-        if (freshProfile?.target_language) targetLanguage = freshProfile.target_language
-      }
-      console.log('🌍 Using language:', targetLanguage)
+      const targetLanguage = 'English'
       const systemPrompt = `You are ${scenario.character_name}, a ${scenario.character_role}. 
 Personality: ${scenario.character_personality}
 Mood: ${scenario.character_mood}
 Style: ${scenario.character_accent}
 
 Mission context: ${scenario.context}
-
-IMPORTANT: You MUST respond ONLY in ${targetLanguage}. The user is learning ${targetLanguage} - they will speak to you in ${targetLanguage} and you must reply in ${targetLanguage} only. Never switch to English.
 
 Stay completely in character at all times. React naturally to what the user says — make them work for their goal. Keep responses short (1-3 sentences max). Be realistic and immersive. Do NOT break character or acknowledge this is a language exercise.
 This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX_EXCHANGES - 1 ? ' This is the last exchange, wrap up naturally.' : ''}`
@@ -210,12 +200,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       const formData = new FormData()
       formData.append('file', audioBlob, 'audio.webm')
       formData.append('model', 'whisper-large-v3')
-      const langCodes: Record<string, string> = {
-        'Spanish': 'es', 'French': 'fr', 'German': 'de', 'Japanese': 'ja',
-        'Mandarin': 'zh', 'Italian': 'it', 'Portuguese': 'pt', 'Arabic': 'ar',
-        'Korean': 'ko', 'Hindi': 'hi', 'English': 'en'
-      }
-      formData.append('language', langCodes[profile?.target_language || 'English'] || 'en')
+      formData.append('language', 'en')
       const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${GROQ_API_KEY}` },

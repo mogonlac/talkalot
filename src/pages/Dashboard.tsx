@@ -1,10 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { Flame, Star, Shuffle, Map, LogOut, Trophy, ChevronDown, Check } from 'lucide-react'
+import { useEffect } from 'react'
+import { Flame, Star, Shuffle, Map, LogOut, Trophy } from 'lucide-react'
 import Mascot from '@/components/Mascot'
-import { LANGUAGES } from './LanguageSelect'
-import { supabase } from '@/lib/supabase'
 
 function getLevelProgress(xp: number) {
   const xpPerLevel = 500
@@ -24,24 +22,12 @@ function getCEFRColor(cefr: string) {
 }
 
 export default function Dashboard() {
-  const { user, profile, signOut, loading, refreshProfile } = useAuth()
+  const { user, profile, signOut, loading } = useAuth()
   const navigate = useNavigate()
-  const [showLangDropdown, setShowLangDropdown] = useState(false)
-  const [savingLang, setSavingLang] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) navigate('/auth')
   }, [user, loading, navigate])
-
-  const handleLanguageChange = async (langCode: string) => {
-    if (!user) return
-    setSavingLang(true)
-    const { error } = await supabase.from('profiles').update({ target_language: langCode }).eq('id', user.id)
-    console.log('Language update:', langCode, error ? 'ERROR: ' + error.message : 'OK ✅')
-    await refreshProfile()
-    setShowLangDropdown(false)
-    setSavingLang(false)
-  }
 
   if (loading || !profile) {
     return (
@@ -72,58 +58,12 @@ export default function Dashboard() {
           <p className="text-slate-400 text-sm font-medium">Good day,</p>
           <h1 className="text-2xl font-black text-slate-900"><span className="inline-block animate-bounce" style={{animationDuration: '1.5s'}}>👋</span> {profile.username}</h1>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Language selector */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="flex items-center gap-2 bg-slate-50 border border-slate-200 hover:border-slate-300 px-3 py-2 rounded-xl transition-all shadow-sm"
-            >
-              <span className="text-lg">{LANGUAGES.find(l => l.code === profile.target_language)?.flag || '🌍'}</span>
-              <span className="text-sm font-bold text-slate-700">{profile.target_language || 'Language'}</span>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${showLangDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {/* Dropdown */}
-            {showLangDropdown && (
-              <>
-                {/* Backdrop */}
-                <div className="fixed inset-0 z-10" onClick={() => setShowLangDropdown(false)} />
-                <div className="absolute right-0 top-12 z-20 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden w-52">
-                  <div className="px-3 py-2 border-b border-slate-100">
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Learning language</p>
-                  </div>
-                  <div className="max-h-64 overflow-y-auto">
-                    {LANGUAGES.map(lang => (
-                      <button
-                        key={lang.code}
-                        onClick={() => handleLanguageChange(lang.code)}
-                        disabled={savingLang}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors ${profile.target_language === lang.code ? 'bg-violet-50' : ''}`}
-                      >
-                        <span className="text-xl">{lang.flag}</span>
-                        <div className="text-left flex-1">
-                          <p className={`text-sm font-bold ${profile.target_language === lang.code ? 'text-violet-700' : 'text-slate-700'}`}>{lang.name}</p>
-                          <p className="text-xs text-slate-400">{lang.native}</p>
-                        </div>
-                        {profile.target_language === lang.code && (
-                          <Check className="w-4 h-4 text-violet-500 flex-shrink-0" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <button
-            onClick={handleSignOut}
-            className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
-          >
-            <LogOut className="w-4 h-4 text-slate-500" />
-          </button>
-        </div>
+        <button
+          onClick={handleSignOut}
+          className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition-colors"
+        >
+          <LogOut className="w-4 h-4 text-slate-500" />
+        </button>
       </div>
 
       {/* Stats row */}

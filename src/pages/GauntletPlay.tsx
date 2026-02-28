@@ -148,7 +148,7 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
       setMessages(finalMessages)
       const newExchangeCount = exchangeCount + 1
       setExchangeCount(newExchangeCount)
-      setUserSubtitle(null)
+      setTimeout(() => setUserSubtitle(null), 2000)
       await speakText(aiText)
 
       // Auto advance after last exchange

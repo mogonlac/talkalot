@@ -142,8 +142,8 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       const aiText = data.choices?.[0]?.message?.content || "I didn't quite catch that."
       setMessages(prev => [...prev, { role: 'assistant', content: aiText }])
       setExchangeCount(prev => prev + 1)
-      // Clear user subtitle when AI responds
-      setUserSubtitle(null)
+      // Keep user subtitle visible for at least 2 seconds after AI responds
+      setTimeout(() => setUserSubtitle(null), 2000)
       speakText(aiText)
     } catch (err) {
       console.error('Send error:', err)

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Zap, RotateCcw, Home, Star, TrendingUp } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import Mascot from '@/components/Mascot'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -26,10 +27,10 @@ function ScoreBar({ label, value, color }: { label: string; value: number; color
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className="text-slate-400">{label}</span>
-        <span className="text-white font-bold">{value}/100</span>
+        <span className="text-slate-600">{label}</span>
+        <span className="text-slate-900 font-bold">{value}/100</span>
       </div>
-      <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-1000 ${color}`}
           style={{ width: `${value}%` }}
@@ -208,9 +209,9 @@ Respond ONLY in this exact JSON format:
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
-        <div className="w-16 h-16 rounded-full border-4 border-purple-600 border-t-transparent animate-spin" />
-        <p className="text-purple-300 font-bold text-lg animate-pulse">AI is assessing your performance...</p>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center gap-4">
+        <Mascot className="w-24 h-auto animate-bounce" />
+        <p className="text-violet-600 font-bold text-lg animate-pulse">AI is assessing your performance...</p>
       </div>
     )
   }
@@ -232,28 +233,28 @@ Respond ONLY in this exact JSON format:
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' }}>
+    <div className="min-h-screen bg-white flex flex-col">
       <div className="flex-1 px-6 py-8 max-w-md mx-auto w-full flex flex-col gap-6">
         {/* Score Hero */}
         <div className="text-center">
           <div className="text-6xl mb-2">{getOverallEmoji(scores.overall)}</div>
-          <h1 className="text-4xl font-black text-white mb-1">{scores.overall}<span className="text-slate-400 text-2xl">/100</span></h1>
-          <p className="text-purple-300 font-bold text-lg">{getOverallLabel(scores.overall)}</p>
+          <h1 className="text-4xl font-black text-slate-900 mb-1">{scores.overall}<span className="text-slate-400 text-2xl">/100</span></h1>
+          <p className="text-violet-600 font-bold text-lg">{getOverallLabel(scores.overall)}</p>
         </div>
 
         {/* XP Badge */}
         <div className={`flex items-center justify-center gap-2 transition-all duration-700 ${xpAnimated ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
-          <div className="flex items-center gap-2 bg-yellow-500/20 border border-yellow-500/40 px-5 py-2 rounded-full">
-            <Zap className="w-5 h-5 text-yellow-400" />
-            <span className="text-yellow-400 font-black text-xl">+{scores.xp} XP</span>
+          <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-5 py-2 rounded-full">
+            <Zap className="w-5 h-5 text-yellow-500" />
+            <span className="text-yellow-600 font-black text-xl">+{scores.xp} XP</span>
           </div>
         </div>
 
         {/* Score Breakdown */}
-        <Card className="border-slate-800 bg-slate-900/60 backdrop-blur-sm">
+        <Card className="border-slate-200 bg-slate-50">
           <CardContent className="p-5 space-y-4">
-            <h2 className="text-white font-bold flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-purple-400" />
+            <h2 className="text-slate-900 font-bold flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-violet-600" />
               Score Breakdown
             </h2>
             <ScoreBar label="Grammar" value={scores.grammar} color="bg-gradient-to-r from-blue-500 to-cyan-400" />
@@ -263,15 +264,15 @@ Respond ONLY in this exact JSON format:
         </Card>
 
         {/* AI Advice */}
-        <Card className="border-purple-800/50 bg-purple-900/20 backdrop-blur-sm">
+        <Card className="border-violet-200 bg-violet-50">
           <CardContent className="p-5">
             <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center flex-shrink-0">
                 <Star className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="text-purple-300 text-xs font-bold uppercase tracking-widest mb-1">AI Advice</p>
-                <p className="text-white font-medium text-sm leading-relaxed">"{scores.advice}"</p>
+                <p className="text-violet-600 text-xs font-bold uppercase tracking-widest mb-1">AI Advice</p>
+                <p className="text-slate-900 font-medium text-sm leading-relaxed">"{scores.advice}"</p>
               </div>
             </div>
           </CardContent>
@@ -280,18 +281,18 @@ Respond ONLY in this exact JSON format:
         {/* Gauntlet session breakdown */}
         {isGauntlet && sessions && (
           <div className="space-y-2">
-            <h3 className="text-white font-bold text-sm flex items-center gap-2">
-              <Zap className="w-4 h-4 text-orange-400" />
+            <h3 className="text-slate-900 font-bold text-sm flex items-center gap-2">
+              <Zap className="w-4 h-4 text-orange-500" />
               Scenarios Completed
             </h3>
             {sessions.map((s: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 bg-slate-900/60 rounded-xl px-3 py-2 border border-slate-800">
-                <span className="text-slate-400 text-xs font-bold w-4">{i + 1}</span>
+              <div key={i} className="flex items-center gap-3 bg-slate-50 rounded-xl px-3 py-2 border border-slate-200">
+                <span className="text-slate-600 text-xs font-bold w-4">{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-xs font-bold truncate">{s.scenario.title}</p>
+                  <p className="text-slate-900 text-xs font-bold truncate">{s.scenario.title}</p>
                   <p className="text-slate-500 text-xs">{s.scenario.character_name} · {s.scenario.character_role}</p>
                 </div>
-                <span className="text-green-400 text-xs font-bold">✓</span>
+                <span className="text-green-600 text-xs font-bold">✓</span>
               </div>
             ))}
           </div>
@@ -302,8 +303,7 @@ Respond ONLY in this exact JSON format:
           {isGauntlet ? (
             <Button
               onClick={() => navigate('/modes/gauntlet')}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 text-base"
-              style={{ boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold h-12 text-base rounded-2xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               New Gauntlet
@@ -311,8 +311,7 @@ Respond ONLY in this exact JSON format:
           ) : (
             <Button
               onClick={() => navigate(`/scenario/${scenario?.id}`)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-12 text-base"
-              style={{ boxShadow: '0 0 20px rgba(124,58,237,0.4)' }}
+              className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold h-12 text-base rounded-2xl"
             >
               <RotateCcw className="w-4 h-4 mr-2" />
               Try Again
@@ -321,14 +320,14 @@ Respond ONLY in this exact JSON format:
           <Button
             onClick={() => navigate('/modes/explorer')}
             variant="outline"
-            className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 h-12 text-base"
+            className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 h-12 text-base rounded-2xl"
           >
             {isGauntlet ? 'Explorer Mode' : 'New Scenario'}
           </Button>
           <Button
             onClick={() => navigate('/dashboard')}
             variant="ghost"
-            className="w-full text-slate-500 hover:text-slate-300 h-10"
+            className="w-full text-slate-600 hover:text-slate-800 h-10 rounded-2xl"
           >
             <Home className="w-4 h-4 mr-2" />
             Dashboard

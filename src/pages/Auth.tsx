@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MessageSquare, Zap, Trophy } from 'lucide-react'
+import Mascot from '@/components/Mascot'
+import { MessageSquare } from 'lucide-react'
 
 export default function Auth() {
   const [email, setEmail] = useState('')
@@ -14,6 +12,7 @@ export default function Auth() {
   const [username, setUsername] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [tab, setTab] = useState<'login' | 'signup'>('login')
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
 
@@ -39,81 +38,81 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)'}}>
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <div className="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center" style={{boxShadow: '0 0 20px rgba(124,58,237,0.6)'}}>
-              <MessageSquare className="w-6 h-6 text-white" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-black text-white tracking-tight">DuoConnect</h1>
-          <p className="text-purple-300 mt-2 text-sm font-medium">Master English through AI conversations</p>
-          <div className="flex items-center justify-center gap-6 mt-4">
-            <div className="flex items-center gap-1 text-xs text-slate-400">
-              <Zap className="w-3 h-3 text-yellow-400" />
-              <span>Rapid-fire scenarios</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-slate-400">
-              <Trophy className="w-3 h-3 text-purple-400" />
-              <span>AI scoring</span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        {/* Logo + Mascot */}
+        <div className="flex flex-col items-center mb-8">
+          <Mascot className="w-32 h-auto mb-4" />
+          <h1 className="text-3xl font-black text-slate-900">DuoConnect</h1>
+          <p className="text-slate-400 text-sm mt-1 text-center">Master English through AI conversations</p>
         </div>
 
-        <Card className="border-purple-900/50 bg-slate-900/80 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-white text-xl">Get Started</CardTitle>
-            <CardDescription className="text-slate-400">Join thousands improving their English</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="w-full bg-slate-800 mb-6">
-                <TabsTrigger value="login" className="flex-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white">Login</TabsTrigger>
-                <TabsTrigger value="signup" className="flex-1 data-[state=active]:bg-purple-600 data-[state=active]:text-white">Sign Up</TabsTrigger>
-              </TabsList>
+        {/* Tab toggle */}
+        <div className="flex bg-slate-100 rounded-2xl p-1 mb-6">
+          <button
+            onClick={() => setTab('login')}
+            className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all ${
+              tab === 'login' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400'
+            }`}
+          >Login</button>
+          <button
+            onClick={() => setTab('signup')}
+            className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all ${
+              tab === 'signup' ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400'
+            }`}
+          >Sign Up</button>
+        </div>
 
-              <TabsContent value="login">
-                <form onSubmit={handleSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Email</Label>
-                    <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" required className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Password</Label>
-                    <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" required className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" />
-                  </div>
-                  {error && <p className="text-red-400 text-sm">{error}</p>}
-                  <Button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-11">
-                    {loading ? 'Signing in...' : 'Sign In'}
-                  </Button>
-                </form>
-              </TabsContent>
+        {tab === 'login' ? (
+          <form onSubmit={handleSignIn} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-slate-700 font-bold text-sm">Email</Label>
+              <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" required className="bg-slate-50 border-slate-200 text-slate-900 rounded-xl h-12" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-slate-700 font-bold text-sm">Password</Label>
+              <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" required className="bg-slate-50 border-slate-200 text-slate-900 rounded-xl h-12" />
+            </div>
+            {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full h-12 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-black text-base transition-all active:scale-95 disabled:opacity-50">
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleSignUp} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-slate-700 font-bold text-sm">Username</Label>
+              <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="cooluser123" required className="bg-slate-50 border-slate-200 text-slate-900 rounded-xl h-12" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-slate-700 font-bold text-sm">Email</Label>
+              <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" required className="bg-slate-50 border-slate-200 text-slate-900 rounded-xl h-12" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-slate-700 font-bold text-sm">Password</Label>
+              <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" required className="bg-slate-50 border-slate-200 text-slate-900 rounded-xl h-12" />
+            </div>
+            {error && <p className="text-red-500 text-sm font-medium">{error}</p>}
+            <button type="submit" disabled={loading} className="w-full h-12 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-black text-base transition-all active:scale-95 disabled:opacity-50">
+              {loading ? 'Creating account...' : 'Create Account'}
+            </button>
+          </form>
+        )}
 
-              <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Username</Label>
-                    <Input value={username} onChange={e => setUsername(e.target.value)} placeholder="cooluser123" required className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Email</Label>
-                    <Input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" required className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Password</Label>
-                    <Input value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" required className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500" />
-                  </div>
-                  {error && <p className="text-red-400 text-sm">{error}</p>}
-                  <Button type="submit" disabled={loading} className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-11">
-                    {loading ? 'Creating account...' : 'Create Account'}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+        <div className="flex gap-3 mt-8">
+          <div className="flex-1 bg-violet-50 rounded-2xl p-3 text-center">
+            <p className="text-violet-600 font-black text-lg">12+</p>
+            <p className="text-violet-400 text-xs">Scenarios</p>
+          </div>
+          <div className="flex-1 bg-teal-50 rounded-2xl p-3 text-center">
+            <p className="text-teal-600 font-black text-lg">AI</p>
+            <p className="text-teal-400 text-xs">Voice chat</p>
+          </div>
+          <div className="flex-1 bg-orange-50 rounded-2xl p-3 text-center">
+            <p className="text-orange-600 font-black text-lg">XP</p>
+            <p className="text-orange-400 text-xs">Gamified</p>
+          </div>
+        </div>
       </div>
     </div>
   )

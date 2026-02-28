@@ -277,7 +277,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
 
       {/* Mission banner */}
       <div className="relative z-20 mx-5 mb-2 flex-shrink-0">
-        <div className="bg-black/50 border border-purple-500/30 rounded-xl px-3 py-2 backdrop-blur-sm">
+        <div className="bg-white/10 border border-white/20 rounded-xl px-3 py-2 backdrop-blur-sm">
           <p className="text-purple-300 text-xs leading-relaxed">{scenario.context}</p>
         </div>
       </div>

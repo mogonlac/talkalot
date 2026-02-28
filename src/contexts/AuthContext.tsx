@@ -32,8 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle()
       if (data) {
         setProfile(data)
-        // Start preloading all scenario images in background
-        preloadAllImages()
+        // Note: Images now load on-demand to avoid rate limiting
+        // preloadAllImages() - disabled to prevent 403 errors from Pollinations.ai
         return
       }
       console.log('Profile fetch attempt', i + 1, error)

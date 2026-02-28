@@ -4,7 +4,7 @@ import { Mic, MicOff, Send, X, Zap } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
-import { playAudio, stopAudio } from '@/lib/audioManager'
+import { playAudio, stopAudio, speakWithBrowserTTS } from '@/lib/audioManager'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -155,7 +155,11 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
   }
 
   const speakText = async (text: string) => {
-    if (!ELEVENLABS_API_KEY) return
+    if (!ELEVENLABS_API_KEY) {
+      // Fallback to browser TTS if no API key
+      await speakWithBrowserTTS(text)
+      return
+    }
     const voiceId = scenario ? (CHARACTER_VOICES[scenario.character_name] || 'JBFqnCBsd6RMkjVDRZzb') : 'JBFqnCBsd6RMkjVDRZzb'
     try {
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
@@ -163,10 +167,19 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
         headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
         body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
       })
-      if (!response.ok) return
+      if (!response.ok) {
+        // Fallback to browser TTS if API fails (quota exceeded, etc)
+        console.warn('ElevenLabs API failed, using browser TTS fallback')
+        await speakWithBrowserTTS(text)
+        return
+      }
       const arrayBuffer = await response.arrayBuffer()
       await playAudio(arrayBuffer)
-    } catch (err) { console.error('TTS error:', err) }
+    } catch (err) {
+      console.error('TTS error:', err)
+      // Fallback to browser TTS on error
+      await speakWithBrowserTTS(text)
+    }
   }
 
   const toggleListening = async () => {
@@ -221,20 +234,16 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden relative" style={{ background: '#0a0a0f' }}>
 
-      {/* Full screen background image */}
-      {bgImage ? (
+      {/* Full screen background */}
+      {bgImage && (
         <div
           className="absolute inset-0 z-0"
           style={{
-            backgroundImage: `url(${bgImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.25
+            background: bgImage,
+            opacity: 0.3
           }}
         />
-      ) : imagesLoading ? (
-        <div className="absolute inset-0 z-0 animate-pulse" style={{ background: 'linear-gradient(135deg, #1a0533, #0a1a3d)' }} />
-      ) : null}
+      )}
 
       {/* Gradient overlays */}
       <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.95) 100%)' }} />
@@ -263,26 +272,20 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
 
       {/* Character portrait — center top */}
       <div className="relative z-20 flex flex-col items-center pt-6 pb-4 flex-shrink-0">
-        {avatarImage ? (
-          <div className="relative">
-            <img
-              src={avatarImage}
-              alt={scenario.character_name}
-              className={`w-28 h-28 rounded-full object-cover border-2 border-purple-500/60 ring-2 ring-white/30 ${!loading && lastMessage?.role === 'assistant' ? 'ring-4 ring-white/60 animate-pulse' : ''}`}
-              style={{ boxShadow: '0 0 40px rgba(124,58,237,0.5)' }}
-            />
-            {loading && (
-              <div className="absolute inset-0 rounded-full border-2 border-purple-400 animate-ping opacity-60" />
-            )}
-          </div>
-        ) : (
+        <div className="relative">
           <div
-            className={`w-28 h-28 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-4xl`}
-            style={{ boxShadow: '0 0 40px rgba(124,58,237,0.4)' }}
+            className={`w-28 h-28 rounded-full flex items-center justify-center text-6xl border-2 border-purple-500/60 ring-2 ring-white/30 ${!loading && lastMessage?.role === 'assistant' ? 'ring-4 ring-white/60 animate-pulse' : ''}`}
+            style={{ 
+              background: bgImage || `linear-gradient(to bottom right, var(--tw-gradient-stops))`,
+              boxShadow: '0 0 40px rgba(124,58,237,0.5)' 
+            }}
           >
-            {imagesLoading ? <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" /> : '🎭'}
+            {avatarImage || '🎭'}
           </div>
-        )}
+          {loading && (
+            <div className="absolute inset-0 rounded-full border-2 border-purple-400 animate-ping opacity-60" />
+          )}
+        </div>
         <h2 className="text-white font-black text-lg mt-3">{scenario.character_name}</h2>
         <p className="text-slate-400 text-xs">{scenario.character_role}</p>
       </div>

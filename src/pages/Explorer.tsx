@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, ChevronRight, MessageSquare } from 'lucide-react'
 import { SEED_SCENARIOS, SCENARIO_CATEGORIES } from '@/data/scenarios'
+import { getScenarioImages } from '@/lib/imageCache'
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   beginner: 'bg-green-900/50 text-green-300 border-green-700/50',
@@ -73,6 +74,7 @@ export default function Explorer() {
           </h2>
           {filteredScenarios.map(scenario => {
             const category = SCENARIO_CATEGORIES.find(c => c.id === scenario.category)
+            const images = getScenarioImages(scenario.id)
             return (
               <Card
                 key={scenario.id}
@@ -81,12 +83,20 @@ export default function Explorer() {
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${category?.color || 'from-purple-500 to-indigo-500'} flex items-center justify-center flex-shrink-0 text-xl`}>
-                      {category?.emoji}
+                    {/* Character Avatar */}
+                    <div 
+                      className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 text-2xl border-2 border-purple-500/40 group-hover:border-purple-400 transition-all"
+                      style={{ 
+                        background: images?.bg || 'linear-gradient(135deg, #667eea, #764ba2)',
+                        boxShadow: '0 0 20px rgba(124,58,237,0.3)'
+                      }}
+                    >
+                      {images?.avatar || '🎭'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-white font-bold text-sm truncate">{scenario.title}</h3>
+                        <span className="text-xs">{category?.emoji}</span>
                       </div>
                       <p className="text-slate-500 text-xs truncate mb-2">
                         With <span className="text-slate-300 font-medium">{scenario.character_name}</span> · {scenario.character_role}

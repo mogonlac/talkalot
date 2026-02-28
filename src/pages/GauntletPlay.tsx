@@ -4,7 +4,7 @@ import { Mic, MicOff, Zap, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
-import { playAudio, stopAudio } from '@/lib/audioManager'
+import { playAudio, stopAudio, speakWithBrowserTTS } from '@/lib/audioManager'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -166,7 +166,11 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
   }
 
   const speakText = async (text: string): Promise<void> => {
-    if (!ELEVENLABS_API_KEY) return
+    if (!ELEVENLABS_API_KEY) {
+      // Fallback to browser TTS if no API key
+      await speakWithBrowserTTS(text)
+      return
+    }
     const voiceId = currentScenario ? (CHARACTER_VOICES[currentScenario.character_name] || 'JBFqnCBsd6RMkjVDRZzb') : 'JBFqnCBsd6RMkjVDRZzb'
     try {
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`, {
@@ -174,10 +178,19 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
         headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
         body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } })
       })
-      if (!response.ok) return
+      if (!response.ok) {
+        // Fallback to browser TTS if API fails
+        console.warn('ElevenLabs API failed, using browser TTS fallback')
+        await speakWithBrowserTTS(text)
+        return
+      }
       const arrayBuffer = await response.arrayBuffer()
       await playAudio(arrayBuffer)
-    } catch { }
+    } catch (err) {
+      console.error('TTS error:', err)
+      // Fallback to browser TTS on error
+      await speakWithBrowserTTS(text)
+    }
   }
 
   const toggleListening = async () => {
@@ -237,9 +250,9 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
   return (
     <div className={`h-screen w-full flex flex-col overflow-hidden relative transition-opacity duration-500 ${transitioning ? 'opacity-0' : 'opacity-100'}`} style={{ background: '#0a0a0f' }}>
 
-      {/* Background image */}
+      {/* Background gradient */}
       {bgImage && (
-        <div className="absolute inset-0 z-0" style={{ backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.25 }} />
+        <div className="absolute inset-0 z-0" style={{ background: bgImage, opacity: 0.3 }} />
       )}
       <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.8) 70%, rgba(0,0,0,0.98) 100%)' }} />
 
@@ -272,16 +285,18 @@ This is exchange ${exchangeCount + 1} of ${EXCHANGES_PER_SCENARIO}.${exchangeCou
 
       {/* Character portrait */}
       <div className="relative z-20 flex flex-col items-center pt-6 pb-4 flex-shrink-0">
-        {avatarImage ? (
-          <div className="relative">
-            <img src={avatarImage} alt={currentScenario.character_name} className="w-28 h-28 rounded-full object-cover border-2 border-orange-500/60 ring-2 ring-orange-300/40" style={{ boxShadow: '0 0 40px rgba(245,158,11,0.4)' }} />
-            {loading && <div className="absolute inset-0 rounded-full border-2 border-orange-400 animate-ping opacity-60" />}
+        <div className="relative">
+          <div 
+            className={`w-28 h-28 rounded-full flex items-center justify-center text-6xl border-2 border-orange-500/60 ring-2 ring-orange-300/40 ${loading ? 'animate-pulse' : ''}`}
+            style={{ 
+              background: bgImage || scenarioGradient,
+              boxShadow: '0 0 40px rgba(245,158,11,0.4)' 
+            }}
+          >
+            {avatarImage || '🎭'}
           </div>
-        ) : (
-          <div className={`w-28 h-28 rounded-full bg-gradient-to-br ${scenarioGradient} flex items-center justify-center`} style={{ boxShadow: '0 0 40px rgba(245,158,11,0.3)' }}>
-            <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
+          {loading && <div className="absolute inset-0 rounded-full border-2 border-orange-400 animate-ping opacity-60" />}
+        </div>
         <h2 className="text-white font-black text-lg mt-3">{currentScenario.character_name}</h2>
         <p className="text-slate-400 text-xs">{currentScenario.character_role}</p>
       </div>

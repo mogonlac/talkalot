@@ -131,15 +131,11 @@ export default function Feed() {
       onTouchEnd={handleTouchEnd}
       onWheel={handleWheel}
     >
-      {/* Background image */}
-      {bgImages[currentIndex] ? (
-        <div
-          className="absolute inset-0 z-0 transition-opacity duration-700"
-          style={{ backgroundImage: `url(${bgImages[currentIndex]})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.35 }}
-        />
-      ) : (
-        <div className={`absolute inset-0 z-0 bg-gradient-to-br ${gradient} opacity-20`} />
-      )}
+      {/* Background gradient */}
+      <div
+        className="absolute inset-0 z-0 transition-opacity duration-700"
+        style={{ background: bgImages[currentIndex] || `linear-gradient(to bottom right, ${gradient})`, opacity: 0.3 }}
+      />
 
       {/* Gradient overlay - stronger at bottom */}
       <div className="absolute inset-0 z-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 30%, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.97) 100%)' }} />
@@ -182,14 +178,13 @@ export default function Feed() {
       >
         {/* Character card */}
         <div className="flex items-center gap-4 mb-4">
-          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0 overflow-hidden ring-2 ring-white/30 shadow-xl`}>
-            {avatarImages[currentIndex] ? (
-              <img src={avatarImages[currentIndex]} alt={scenario.character_name} className="w-full h-full object-cover" />
-            ) : imgLoading[currentIndex] ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <div className="text-3xl">{category?.emoji}</div>
-            )}
+          <div 
+            className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 ring-2 ring-white/30 shadow-xl text-4xl"
+            style={{ 
+              background: bgImages[currentIndex] || `linear-gradient(to bottom right, ${gradient.replace('from-', 'var(--tw-gradient-from, ').replace(' to-', '), var(--tw-gradient-to, ')}))` 
+            }}
+          >
+            {avatarImages[currentIndex] || category?.emoji || '🎭'}
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-2xl font-black text-white">{scenario.character_name}</h2>

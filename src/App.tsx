@@ -1,27 +1,51 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { useLanguageTutor } from "./hooks/useLanguageTutor";
+import { ScenarioCard } from "./components/ScenarioCard";
 
-const queryClient = new QueryClient();
+/**
+ * App — intentionally primitive and unstyled.
+ * All business logic is delegated to useLanguageTutor.
+ * Lovable will replace the visual design of this file.
+ */
+function App() {
+  const {
+    currentElo,
+    currentScenario,
+    conversationStatus,
+    isSpeaking,
+    startConversation,
+    endConversation,
+    handleSuccess,
+    handleFailure,
+    handleSwipeNext,
+  } = useLanguageTutor();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  const handleEndSuccess = async () => {
+    await endConversation();
+    handleSuccess();
+  };
+
+  const handleEndFail = async () => {
+    await endConversation();
+    handleFailure();
+  };
+
+  return (
+    <div>
+      <h1>DuoConnect — Language Tutor</h1>
+
+      {/* Vertical scenario feed — Lovable will convert this into a TikTok-style swipe UI */}
+      <ScenarioCard
+        scenario={currentScenario}
+        currentElo={currentElo}
+        conversationStatus={conversationStatus}
+        isSpeaking={isSpeaking}
+        onStartTalking={startConversation}
+        onEndSuccess={handleEndSuccess}
+        onEndFail={handleEndFail}
+        onSwipeNext={handleSwipeNext}
+      />
+    </div>
+  );
+}
 
 export default App;

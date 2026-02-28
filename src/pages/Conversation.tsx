@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Mic, MicOff, Send, X, Zap } from 'lucide-react'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
+import { playAudio, stopAudio } from '@/lib/audioManager'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -50,10 +51,10 @@ export default function Conversation() {
   useEffect(() => {
     if (!scenario) return
     setMessages([{ role: 'assistant', content: scenario.opening_line }])
-    // Generate images
     generateImages()
-    // Speak opening line
     setTimeout(() => speakText(scenario.opening_line), 500)
+    // Stop audio when leaving the screen
+    return () => stopAudio()
   }, [id])
 
   useEffect(() => {
@@ -162,12 +163,7 @@ This is exchange ${exchangeCount + 1} of ${MAX_EXCHANGES}.${exchangeCount >= MAX
       })
       if (!response.ok) return
       const arrayBuffer = await response.arrayBuffer()
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
-      const source = audioContext.createBufferSource()
-      source.buffer = audioBuffer
-      source.connect(audioContext.destination)
-      source.start(0)
+      await playAudio(arrayBuffer)
     } catch (err) { console.error('TTS error:', err) }
   }
 

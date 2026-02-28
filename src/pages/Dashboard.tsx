@@ -36,7 +36,8 @@ export default function Dashboard() {
   const handleLanguageChange = async (langCode: string) => {
     if (!user) return
     setSavingLang(true)
-    await supabase.from('profiles').update({ target_language: langCode }).eq('id', user.id)
+    const { error } = await supabase.from('profiles').update({ target_language: langCode }).eq('id', user.id)
+    console.log('Language update:', langCode, error ? 'ERROR: ' + error.message : 'OK ✅')
     await refreshProfile()
     setShowLangDropdown(false)
     setSavingLang(false)

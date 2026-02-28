@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { SEED_SCENARIOS, CHARACTER_VOICES } from '@/data/scenarios'
 import { getScenarioImages, preloadScenarioImages } from '@/lib/imageCache'
 import { playAudio, stopAudio } from '@/lib/audioManager'
+import { supabase } from '@/lib/supabase'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -116,7 +117,13 @@ export default function Conversation() {
     setMessages(newMessages)
 
     try {
-      const targetLanguage = profile?.target_language || 'English'
+      // Read language fresh from Supabase to avoid stale cache
+      let targetLanguage = profile?.target_language || 'Spanish'
+      if (user) {
+        const { data: freshProfile } = await supabase.from('profiles').select('target_language').eq('id', user.id).single()
+        if (freshProfile?.target_language) targetLanguage = freshProfile.target_language
+      }
+      console.log('🌍 Using language:', targetLanguage)
       const systemPrompt = `You are ${scenario.character_name}, a ${scenario.character_role}. 
 Personality: ${scenario.character_personality}
 Mood: ${scenario.character_mood}

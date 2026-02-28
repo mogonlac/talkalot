@@ -202,9 +202,9 @@ export default function Feed() {
         {/* Start button */}
         <button
           onClick={() => navigate(`/scenario/${scenario.id}`)}
-          className={`w-full h-14 rounded-2xl font-black text-white text-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-gradient-to-r ${gradient} shadow-lg`}
+          className="w-full h-14 rounded-2xl font-black text-slate-900 text-lg flex items-center justify-center gap-2 transition-all active:scale-95 bg-white hover:bg-slate-100 shadow-lg"
         >
-          <Zap className="w-5 h-5" />
+          <Zap className="w-5 h-5 text-violet-600" />
           Start Conversation
         </button>
       </div>
